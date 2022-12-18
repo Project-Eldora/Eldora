@@ -1,0 +1,1 @@
+"%ProgramFiles%\WinRAR\WinRAR.exe" a "-cpGenerate Eldora Installer" "..\EldoraRelease\*"
