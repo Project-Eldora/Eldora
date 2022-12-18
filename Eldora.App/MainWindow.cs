@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,14 +18,21 @@ internal sealed partial class MainWindow : Form
 
 	private readonly ChangelogPane _changelogPane = new();
 	private readonly PluginManagerPane _pluginManagerPane = new();
-	
+
 	public MainWindow()
 	{
 		InitializeComponent();
 
 		AddRootNodes();
 		AddInternalPages();
-		AddMappedPages();
+		AddPluginPages();
+
+
+		PluginHandler.PluginsGotChanged += (_, args) =>
+		{
+			if (args.Type != PluginChangedEventArgs.PluginChangedEventType.Added) return;
+			AddPagesForPlugin(args.Plugin);
+		};
 
 		sidebarTreeView.ExpandAll();
 	}
@@ -39,30 +47,42 @@ internal sealed partial class MainWindow : Form
 	{
 		var pageNode = new TreeNode
 		{
-				Name = name,
-				Text = name,
+			Name = name,
+			Text = name,
 		};
 		node.Nodes.Add(pageNode);
-		
+
 		MapControlToNode(pageNode.FullPath, control);
 	}
 
 	/// <summary>
 	/// Adds all internal mapped pages
 	/// </summary>
-	private void AddMappedPages()
+	private void AddPluginPages()
 	{
 		foreach (var loaded in PluginHandler.LoadedPlugins)
 		{
-			var toAdd = (from type in loaded.PluginAssembly.GetExportedTypes() 
-				where Attribute.IsDefined(type, typeof(ToolsPageAttribute)) 
-				let control = (Control) Activator.CreateInstance(type) 
-				select (type.GetCustomAttribute<ToolsPageAttribute>(), control)).ToList();
-
-			toAdd.ForEach(AddPagePath);
+			AddPagesForPlugin(loaded);
 		}
 	}
-	
+
+	private void AddPagesForPlugin(EldoraPlugin loaded)
+	{
+		var toAdd = new List<(ToolsPageAttribute, Control control)>();
+		foreach (var type in loaded.PluginAssembly.GetExportedTypes())
+		{
+			if (Attribute.IsDefined(type, typeof(ToolsPageAttribute)))
+			{
+				var result = Activator.CreateInstance(type);
+				
+				Control control = (Control) result;
+				toAdd.Add((type.GetCustomAttribute<ToolsPageAttribute>(), control));
+			}
+		}
+
+		toAdd.ForEach(AddPagePath);
+	}
+
 	private void AddPagePath((ToolsPageAttribute attribute, Control page) mappedPage)
 	{
 		var path = mappedPage.attribute.PagePathWithTitle;
@@ -76,8 +96,8 @@ internal sealed partial class MainWindow : Form
 			{
 				var node = new TreeNode
 				{
-						Name = t,
-						Text = t
+					Name = t,
+					Text = t
 				};
 				lastNode.Nodes.Add(node);
 				lastNode = node;
@@ -87,26 +107,31 @@ internal sealed partial class MainWindow : Form
 			lastNode = foundNode;
 		}
 
-		MapControlToNode(_toolsNode.Name  + "/" + string.Join("/", mappedPage.attribute.PagePathWithTitle), mappedPage.page);
+		MapControlToNode(_toolsNode.Name + "/" + string.Join("/", mappedPage.attribute.PagePathWithTitle), mappedPage.page);
 	}
 
-#region RootNodes
+	#region RootNodes
+
 	private readonly TreeNode _newsNode = new("News")
 	{
 		Name = "News",
 	};
+
 	private readonly TreeNode _toolsNode = new("Tools")
 	{
 		Name = "Tools",
 	};
+
 	private readonly TreeNode _settingsNode = new("Settings")
 	{
 		Name = "Settings",
 	};
+
 	private readonly TreeNode _helpNode = new("Help")
 	{
 		Name = "Help",
 	};
+
 	#endregion
 
 	/// <summary>
@@ -140,7 +165,7 @@ internal sealed partial class MainWindow : Form
 			}
 
 			if (!_nodeMapping.ContainsKey(path)) return;
-			
+
 			contentPanel.Controls.Clear();
 			contentPanel.Controls.Add(_nodeMapping[path]);
 

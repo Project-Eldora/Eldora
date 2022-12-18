@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -12,10 +13,8 @@ public class Settings
 
 	public class InstalledPlugin
 	{
-		[JsonPropertyName("name")]
-		public string Name { get; set; }
-		[JsonPropertyName("version")]
-		public string Version { get; set; }
+		[JsonPropertyName("name")] public string Name { get; set; }
+		[JsonPropertyName("version")] public Version Version { get; set; }
 	}
 
 	public class PluginRepository
