@@ -4,20 +4,20 @@ using System.Text.Json.Serialization;
 
 namespace Eldora.App;
 
-public class Settings
+public class SettingsModel
 {
-	[JsonPropertyName("plugin_repos")] public List<PluginRepository> PluginRepositories { get; set; } = new();
+	[JsonPropertyName("plugin_repos")] public List<PluginRepositoryModel> PluginRepositories { get; set; } = new();
 
 	[JsonPropertyName("installed_plugins")]
-	public List<InstalledPlugin> InstalledPlugins { get; set; } = new();
+	public List<InstalledPluginModel> InstalledPlugins { get; set; } = new();
 
-	public class InstalledPlugin
+	public class InstalledPluginModel
 	{
 		[JsonPropertyName("name")] public string Name { get; set; }
 		[JsonPropertyName("version")] public Version Version { get; set; }
 	}
 
-	public class PluginRepository
+	public class PluginRepositoryModel
 	{
 		/// <summary>
 		/// The local name

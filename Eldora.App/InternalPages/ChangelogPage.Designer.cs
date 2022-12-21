@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Eldora.App.Panels;
+namespace Eldora.App.InternalPages;
 
 sealed partial class ChangelogPane
 {

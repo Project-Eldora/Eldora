@@ -9,20 +9,20 @@ using NLog.Filters;
 
 namespace Eldora.App.Plugins;
 
-public sealed class EldoraPlugin
+public sealed class PluginContainer
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
 
 	private readonly object _mainPluginEntry;
 
 	public string LocalFilePath { get; }
-	public PluginInfo PluginInfo { get; }
+	public PluginInfoModel PluginInfoModel { get; }
 	public Assembly PluginAssembly { get; }
 
-	public EldoraPlugin(object mainPluginEntry, PluginInfo pluginInfo, Assembly pluginAssembly, string localFilePath)
+	public PluginContainer(object mainPluginEntry, PluginInfoModel pluginInfoModel, Assembly pluginAssembly, string localFilePath)
 	{
 		_mainPluginEntry = mainPluginEntry;
-		PluginInfo = pluginInfo;
+		PluginInfoModel = pluginInfoModel;
 		PluginAssembly = pluginAssembly;
 		LocalFilePath = localFilePath;
 	}
@@ -46,7 +46,7 @@ public sealed class EldoraPlugin
 	}
 }
 
-public sealed class PluginInfo
+public sealed class PluginInfoModel
 {
 	[JsonPropertyName("main_dll")]
 	[JsonRequired]

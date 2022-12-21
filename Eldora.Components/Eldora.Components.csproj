@@ -40,8 +40,9 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="PlaceholderTextbox.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
+        <Compile Include="Standard\EldoraSplitContainer.cs" />
+        <Compile Include="Standard\EldoraTabControl.cs" />
         <Compile Include="Standard\EldoraTextbox.cs" />
         <Compile Include="Standard\EldoraTreeView.cs" />
     </ItemGroup>

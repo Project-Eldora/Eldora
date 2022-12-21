@@ -7,9 +7,9 @@ namespace Eldora.Components.Standard;
 
 public class EldoraTextbox : TextBox
 {
-	protected string _placeholderText = "Placeholder";
-	protected Color _placeholderColor;
-	protected Color _placeholderActiveColor;
+	private string _placeholderText = "Placeholder";
+	private Color _placeholderColor;
+	private Color _placeholderActiveColor;
 
 	private Panel _placeholderContainer;
 	private Font _placeholderFont;

@@ -1,13 +1,6 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Linq;
-using System.Reflection;
-using System.Resources;
-using System.Security.Policy;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using Eldora.WinUtils;
 
 namespace Eldora.Components.Standard;
@@ -51,6 +44,7 @@ public class EldoraTreeView : TreeView
 			g.FillRectangle(b, new Rectangle(0, e.Bounds.Top, ClientSize.Width, e.Bounds.Height));
 		}
 
+		// Draws the expand collapse image if the node has children
 		if (e.Node.Nodes.Count > 0)
 		{
 			g.DrawImage(GetIcon(e.Node.IsExpanded), leftPos + 2, e.Bounds.Top + 1, imageSize, imageSize);
@@ -78,6 +72,11 @@ public class EldoraTreeView : TreeView
 		SelectedNode.Toggle();
 	}
 
+	/// <summary>
+	/// Gets the expand or collapse icon
+	/// </summary>
+	/// <param name="isExpanded"></param>
+	/// <returns></returns>
 	private static Image GetIcon(bool isExpanded)
 	{
 		return typeof(EldoraTreeView).Assembly.ReadEmbeddedRessourceImage($"Eldora.Components.Resources.chevron_{(isExpanded ? "down" : "right")}.png");

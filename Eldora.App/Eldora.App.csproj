@@ -80,20 +80,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EldoraApp.cs" />
-    <Compile Include="Panels\ChangelogPane.cs">
+    <Compile Include="InternalPages\ChangelogPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Panels\ChangelogPane.Designer.cs">
-      <DependentUpon>ChangelogPane.cs</DependentUpon>
+    <Compile Include="InternalPages\ChangelogPage.Designer.cs">
+      <DependentUpon>ChangelogPage.cs</DependentUpon>
     </Compile>
-    <Compile Include="Panels\PluginManagerPane.cs">
+    <Compile Include="InternalPages\PluginManagerPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Panels\PluginManagerPane.Designer.cs">
-      <DependentUpon>PluginManagerPane.cs</DependentUpon>
+    <Compile Include="InternalPages\PluginManagerPage.Designer.cs">
+      <DependentUpon>PluginManagerPage.cs</DependentUpon>
     </Compile>
-    <Compile Include="Paths.cs" />
-    <Compile Include="Plugins\EldoraPlugin.cs" />
+    <Compile Include="InternalPaths.cs" />
+    <Compile Include="Plugins\PluginContainer.cs" />
     <Compile Include="Plugins\PluginHandler.cs" />
     <Compile Include="MainWindow.cs">
       <SubType>Form</SubType>
@@ -101,14 +101,14 @@
     <Compile Include="MainWindow.Designer.cs">
       <DependentUpon>MainWindow.cs</DependentUpon>
     </Compile>
-    <Compile Include="Program.cs" />
+    <Compile Include="ProgramEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Settings.cs" />
-    <EmbeddedResource Include="Panels\ChangelogPane.resx">
-      <DependentUpon>ChangelogPane.cs</DependentUpon>
+    <Compile Include="SettingsModel.cs" />
+    <EmbeddedResource Include="InternalPages\ChangelogPage.resx">
+      <DependentUpon>ChangelogPage.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Panels\PluginManagerPane.resx">
-      <DependentUpon>PluginManagerPane.cs</DependentUpon>
+    <EmbeddedResource Include="InternalPages\PluginManagerPage.resx">
+      <DependentUpon>PluginManagerPage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="MainWindow.resx">
       <DependentUpon>MainWindow.cs</DependentUpon>
@@ -141,7 +141,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Panels\" />
+    <Folder Include="InternalPages\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Eldora.Components\Eldora.Components.csproj">

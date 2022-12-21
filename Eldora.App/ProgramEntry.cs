@@ -6,7 +6,7 @@ using NLog.Targets;
 
 namespace Eldora.App;
 
-internal static class Program
+internal static class ProgramEntry
 {
 	/// <summary>
 	/// The main entry point for the application.
@@ -14,7 +14,7 @@ internal static class Program
 	[STAThread]
 	private static void Main()
 	{
-		Paths.CreateFolderStructure();
+		InternalPaths.CreateFolderStructure();
 		InitiateLogging();
 		EldoraApp.Initalize();
 
@@ -33,7 +33,7 @@ internal static class Program
 
 		var logfile = new FileTarget("log_file")
 		{
-			FileName = $@"{Paths.LogPath}\log.log",
+			FileName = $@"{InternalPaths.LogPath}\log.log",
 			Layout = layout,
 			ArchiveEvery = FileArchivePeriod.Day
 		};

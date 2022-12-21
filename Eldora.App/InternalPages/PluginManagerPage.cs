@@ -8,14 +8,13 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Eldora.App.Plugins;
 using Eldora.Utils;
 using Eldora.WinUtils;
 using NLog;
 
-namespace Eldora.App.Panels;
+namespace Eldora.App.InternalPages;
 
 public partial class PluginManagerPane : UserControl
 {
@@ -117,18 +116,18 @@ public partial class PluginManagerPane : UserControl
 		lvwPlugins.AutoSizeColumns();
 	}
 
-	private ListViewItem CreateItemFromPlugin(EldoraPlugin plugin)
+	private ListViewItem CreateItemFromPlugin(PluginContainer pluginContainer)
 	{
 		var item = new ListViewItem(new[]
 		{
-			plugin.PluginInfo.PluginName,
-			plugin.PluginInfo.PluginVersion.ToString(),
-			plugin.PluginInfo.Author,
-			plugin.PluginInfo.Description
+			pluginContainer.PluginInfoModel.PluginName,
+			pluginContainer.PluginInfoModel.PluginVersion.ToString(),
+			pluginContainer.PluginInfoModel.Author,
+			pluginContainer.PluginInfoModel.Description
 		})
 		{
 			Group = _installedPlugins,
-			Tag = plugin
+			Tag = pluginContainer
 		};
 
 		return item;
@@ -137,7 +136,7 @@ public partial class PluginManagerPane : UserControl
 	private async void FetchRepositories()
 	{
 		_fetchedRepositories.Clear();
-		foreach (var pluginRepo in EldoraApp.Settings.PluginRepositories)
+		foreach (var pluginRepo in EldoraApp.SettingsModel.PluginRepositories)
 		{
 			try
 			{
@@ -214,7 +213,7 @@ public partial class PluginManagerPane : UserControl
 
 		switch (e.Item.Tag)
 		{
-			case EldoraPlugin plugin:
+			case PluginContainer plugin:
 				btnInstallFromRepo.Enabled = false;
 				btnUninstall.Enabled = true;
 				return;
@@ -247,7 +246,7 @@ public partial class PluginManagerPane : UserControl
 
 		Log.Info("Downloading {file}", new Uri(selectedItem.FullUrl));
 
-		var newFile = Path.Combine(Paths.PluginPath, $"{selectedItem.Name}-{selectedItem.Version}.zip");
+		var newFile = Path.Combine(InternalPaths.PluginPath, $"{selectedItem.Name}-{selectedItem.Version}.zip");
 		WebClient.DownloadFileCompleted += WebClientOnDownloadFileCompleted;
 		WebClient.DownloadFileAsync(new Uri(selectedItem.FullUrl), newFile);
 
@@ -289,13 +288,13 @@ public partial class PluginManagerPane : UserControl
 			}
 		}
 
-		var newFile = Path.Combine(Paths.PluginPath, $"{info.PluginName}-{info.PluginVersion}.zip");
+		var newFile = Path.Combine(InternalPaths.PluginPath, $"{info.PluginName}-{info.PluginVersion}.zip");
 
 		File.Copy(selectedFile, newFile, true);
 		InstallFromDisk(newFile, updated, plugin);
 	}
 
-	private void InstallFromDisk(string filePath, bool updated, EldoraPlugin plugin)
+	private void InstallFromDisk(string filePath, bool updated, PluginContainer pluginContainer)
 	{
 		var result = PluginHandler.LoadPlugin(filePath);
 
@@ -308,26 +307,26 @@ public partial class PluginManagerPane : UserControl
 		{
 			if (!updated)
 			{
-				EldoraApp.Settings.InstalledPlugins.Add(new Settings.InstalledPlugin
+				EldoraApp.SettingsModel.InstalledPlugins.Add(new SettingsModel.InstalledPluginModel
 				{
-					Name = result.Plugin.PluginInfo.PluginName,
-					Version = result.Plugin.PluginInfo.PluginVersion,
+					Name = result.PluginContainer.PluginInfoModel.PluginName,
+					Version = result.PluginContainer.PluginInfoModel.PluginVersion,
 				});
 
 				EldoraApp.SaveSettings();
 
-				MessageBox.Show($@"Installed Plugin {result.Plugin.PluginInfo.PluginName} with version {result.Plugin.PluginInfo.PluginVersion}");
-				PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(result.Plugin, PluginChangedEventArgs.PluginChangedEventType.Added));
+				MessageBox.Show($@"Installed Plugin {result.PluginContainer.PluginInfoModel.PluginName} with version {result.PluginContainer.PluginInfoModel.PluginVersion}");
+				PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(result.PluginContainer, PluginChangedEventArgs.PluginChangedEventType.Added));
 			}
 			else
 			{
-				var existing = EldoraApp.Settings.InstalledPlugins.First(p => p.Name == plugin!.PluginInfo.PluginName);
+				var existing = EldoraApp.SettingsModel.InstalledPlugins.First(p => p.Name == pluginContainer!.PluginInfoModel.PluginName);
 				
-				var pluginIndex = EldoraApp.Settings.InstalledPlugins.FindIndex(p => p.Name == plugin!.PluginInfo.PluginName && p.Version == existing.Version);
-				if (pluginIndex >= 0) EldoraApp.Settings.InstalledPlugins.RemoveAt(pluginIndex);
+				var pluginIndex = EldoraApp.SettingsModel.InstalledPlugins.FindIndex(p => p.Name == pluginContainer!.PluginInfoModel.PluginName && p.Version == existing.Version);
+				if (pluginIndex >= 0) EldoraApp.SettingsModel.InstalledPlugins.RemoveAt(pluginIndex);
 
-				var updateMessage = $@"Updated Plugin {result.Plugin.PluginInfo.PluginName} from version {existing.Version} to {result.Plugin.PluginInfo.PluginVersion}";
-				existing.Version = result.Plugin.PluginInfo.PluginVersion;
+				var updateMessage = $@"Updated Plugin {result.PluginContainer.PluginInfoModel.PluginName} from version {existing.Version} to {result.PluginContainer.PluginInfoModel.PluginVersion}";
+				existing.Version = result.PluginContainer.PluginInfoModel.PluginVersion;
 
 				EldoraApp.SaveSettings();
 
@@ -341,11 +340,11 @@ public partial class PluginManagerPane : UserControl
 	{
 		if (lvwPlugins.SelectedItems.Count == 0) return;
 
-		var selectedItem = (EldoraPlugin) lvwPlugins.SelectedItems[0].Tag;
+		var selectedItem = (PluginContainer) lvwPlugins.SelectedItems[0].Tag;
 		File.Delete(selectedItem.LocalFilePath);
 
-		var pluginIndex = EldoraApp.Settings.InstalledPlugins.FindIndex(p => p.Name == selectedItem.PluginInfo.PluginName && p.Version == selectedItem.PluginInfo.PluginVersion);
-		if (pluginIndex >= 0) EldoraApp.Settings.InstalledPlugins.RemoveAt(pluginIndex);
+		var pluginIndex = EldoraApp.SettingsModel.InstalledPlugins.FindIndex(p => p.Name == selectedItem.PluginInfoModel.PluginName && p.Version == selectedItem.PluginInfoModel.PluginVersion);
+		if (pluginIndex >= 0) EldoraApp.SettingsModel.InstalledPlugins.RemoveAt(pluginIndex);
 
 		EldoraApp.SaveSettings();
 

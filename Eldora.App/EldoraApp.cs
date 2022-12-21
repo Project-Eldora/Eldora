@@ -12,15 +12,15 @@ namespace Eldora.App;
 public static class EldoraApp
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
-	public static Settings Settings { get; private set; }
+	public static SettingsModel SettingsModel { get; private set; }
 
 	private static void LoadPlugins()
 	{
-		var pluginFolderContent = Directory.GetFiles(Paths.PluginPath, "*.zip").ToList();
+		var pluginFolderContent = Directory.GetFiles(InternalPaths.PluginPath, "*.zip").ToList();
 
-		var toDelete = new List<Settings.InstalledPlugin>();
+		var toDelete = new List<SettingsModel.InstalledPluginModel>();
 
-		foreach (var settingsInstalledPlugin in Settings.InstalledPlugins)
+		foreach (var settingsInstalledPlugin in SettingsModel.InstalledPlugins)
 		{
 			var found = false;
 
@@ -54,7 +54,7 @@ public static class EldoraApp
 			}
 		}
 
-		Settings.InstalledPlugins = Settings.InstalledPlugins.Except(toDelete).ToList();
+		SettingsModel.InstalledPlugins = SettingsModel.InstalledPlugins.Except(toDelete).ToList();
 		SaveSettings();
 	}
 
@@ -62,12 +62,12 @@ public static class EldoraApp
 	{
 		try
 		{
-			if (!File.Exists(Paths.SettingsPath))
+			if (!File.Exists(InternalPaths.SettingsPath))
 			{
 				LoadDefaultSettings();
 			}
 
-			Settings = JsonSerializer.Deserialize<Settings>(File.ReadAllText(Paths.SettingsPath), new JsonSerializerOptions
+			SettingsModel = JsonSerializer.Deserialize<SettingsModel>(File.ReadAllText(InternalPaths.SettingsPath), new JsonSerializerOptions
 			{
 				Converters =
 				{
@@ -85,11 +85,11 @@ public static class EldoraApp
 
 	private static void LoadDefaultSettings()
 	{
-		Settings = new Settings
+		SettingsModel = new SettingsModel
 		{
 			PluginRepositories =
 			{
-				new Settings.PluginRepository
+				new SettingsModel.PluginRepositoryModel
 				{
 					Name = "Default",
 					Url = "https://project-eldora.github.io/EldoraPlugins/plugins.json"
@@ -102,8 +102,8 @@ public static class EldoraApp
 
 	public static void SaveSettings()
 	{
-		if (File.Exists(Paths.SettingsPath)) File.Delete(Paths.SettingsPath);
-		File.WriteAllText(Paths.SettingsPath, JsonSerializer.Serialize(Settings, new JsonSerializerOptions
+		if (File.Exists(InternalPaths.SettingsPath)) File.Delete(InternalPaths.SettingsPath);
+		File.WriteAllText(InternalPaths.SettingsPath, JsonSerializer.Serialize(SettingsModel, new JsonSerializerOptions
 		{
 			WriteIndented = true,
 			Converters =

@@ -3,7 +3,7 @@ using System.IO;
 
 namespace Eldora.App;
 
-internal static class Paths
+internal static class InternalPaths
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
 	
@@ -11,7 +11,6 @@ internal static class Paths
 	public static string PluginPath  { get; private set; }
 	public static string LanguagePath  { get; private set; }
 	public static string LogPath { get; private set; }
-
 	public static string SettingsPath { get; private set; }
 	
 	public static void CreateFolderStructure()

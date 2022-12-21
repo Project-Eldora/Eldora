@@ -14,12 +14,12 @@ namespace Eldora.App.Plugins;
 
 public class PluginChangedEventArgs : EventArgs
 {
-	public EldoraPlugin Plugin { get; }
+	public PluginContainer PluginContainer { get; }
 	public PluginChangedEventType Type { get; }
 
-	public PluginChangedEventArgs(EldoraPlugin plugin, PluginChangedEventType type)
+	public PluginChangedEventArgs(PluginContainer pluginContainer, PluginChangedEventType type)
 	{
-		this.Plugin = plugin;
+		this.PluginContainer = pluginContainer;
 		Type = type;
 	}
 
@@ -36,10 +36,10 @@ public static class PluginHandler
 
 	private const string PluginInfoFileName = "plugininfo.json";
 	private const string ContentPathPrefix = "content";
-	public static List<EldoraPlugin> LoadedPlugins { get; } = new();
+	public static List<PluginContainer> LoadedPlugins { get; } = new();
 	public static event EventHandler<PluginChangedEventArgs> PluginsGotChanged;
 
-	public class PluginData
+	private class PluginData
 	{
 		public string FullName { get; set; }
 		public string Name { get; set; }
@@ -67,13 +67,13 @@ public static class PluginHandler
 		List<PluginData> contentData = new();
 
 		using var zip = ZipFile.OpenRead(pluginPath);
-		PluginInfo info = null;
+		PluginInfoModel infoModel = null;
 		foreach (var zipArchiveEntry in zip.Entries)
 		{
 			if (zipArchiveEntry.FullName.Equals(PluginInfoFileName))
 			{
 				using var stream = zipArchiveEntry.Open();
-				info = ReadPluginFile(ReadFully(stream));
+				infoModel = ReadPluginFile(ReadStreamFully(stream));
 				continue;
 			}
 
@@ -83,7 +83,7 @@ public static class PluginHandler
 			var data = new PluginData
 			{
 				AssemblyName = GetAssemblyName(zipArchiveEntry),
-				Data = ReadFully(zipArchiveEntry.Open()),
+				Data = ReadStreamFully(zipArchiveEntry.Open()),
 				FullName = zipArchiveEntry.FullName,
 				Name = zipArchiveEntry.Name
 			};
@@ -92,17 +92,17 @@ public static class PluginHandler
 		}
 
 		// Check for plugin-info
-		if (info == null)
+		if (infoModel == null)
 		{
 			Log.Warn("Plugin Info not found in plugin {PluginName}", pluginPath);
 			return new PluginLoadResult(PluginLoadResult.ErrorCode.PluginInfoNotFound);
 		}
 
 		// Check for main assembly
-		var mainDllEntry = contentData.FirstOrDefault(tuple => tuple.Name.Equals(info.MainDll));
+		var mainDllEntry = contentData.FirstOrDefault(tuple => tuple.Name.Equals(infoModel.MainDll));
 		if (mainDllEntry == default)
 		{
-			Log.Warn("Plugin {PluginName} has no maindll entry", info.PluginName);
+			Log.Warn("Plugin {PluginName} has no maindll entry", infoModel.PluginName);
 			return new PluginLoadResult(PluginLoadResult.ErrorCode.MissingMainDllEntry);
 		}
 		
@@ -126,11 +126,11 @@ public static class PluginHandler
 
 		if (pluginInstance == null)
 		{
-			Log.Warn("Plugin {PluginName} has no main plugin entry", info.PluginName);
+			Log.Warn("Plugin {PluginName} has no main plugin entry", infoModel.PluginName);
 			return new PluginLoadResult(PluginLoadResult.ErrorCode.MissingMainPluginEntry);
 		}
 
-		var plugin = new EldoraPlugin(pluginInstance, info, mainAssembly, pluginPath);
+		var plugin = new PluginContainer(pluginInstance, infoModel, mainAssembly, pluginPath);
 		LoadedPlugins.Add(plugin);
 		
 		plugin.OnLoad();
@@ -149,9 +149,9 @@ public static class PluginHandler
 		return Assembly.Load(entry.Data);
 	}
 
-	private static PluginInfo ReadPluginFile(byte[] data)
+	private static PluginInfoModel ReadPluginFile(byte[] data)
 	{
-		return JsonSerializer.Deserialize<PluginInfo>(BytesToStringConverted(data), new JsonSerializerOptions
+		return JsonSerializer.Deserialize<PluginInfoModel>(ConvertBytesToString(data), new JsonSerializerOptions
 		{
 			Converters =
 			{
@@ -161,18 +161,14 @@ public static class PluginHandler
 		});
 	}
 
-	private static string BytesToStringConverted(byte[] bytes)
+	private static string ConvertBytesToString(byte[] bytes)
 	{
-		using (var stream = new MemoryStream(bytes))
-		{
-			using (var streamReader = new StreamReader(stream))
-			{
-				return streamReader.ReadToEnd();
-			}
-		}
+		using var stream = new MemoryStream(bytes);
+		using var streamReader = new StreamReader(stream);
+		return streamReader.ReadToEnd();
 	}
 
-	private static byte[] ReadFully(Stream input)
+	private static byte[] ReadStreamFully(Stream input)
 	{
 		var buffer = new byte[16 * 1024];
 		using var ms = new MemoryStream();
@@ -198,66 +194,72 @@ public static class PluginHandler
 		return AssemblyName.GetAssemblyName(tmpFile.Path);
 	}
 
-	public static PluginInfo GetPluginInfo(string path)
+	public static PluginInfoModel GetPluginInfo(string path)
 	{
 		using var zip = ZipFile.OpenRead(path);
-		PluginInfo info = null;
+		PluginInfoModel infoModel = null;
 		foreach (var zipArchiveEntry in zip.Entries)
 		{
 			if (!zipArchiveEntry.FullName.Equals(PluginInfoFileName)) continue;
 			using var stream = zipArchiveEntry.Open();
-			info = ReadPluginFile(ReadFully(stream));
+			infoModel = ReadPluginFile(ReadStreamFully(stream));
 		}
 
-		return info;
+		return infoModel;
 	}
 
-	public static bool IsNewerOrAlreadyInstalled(PluginInfo info)
+	public static bool IsNewerOrAlreadyInstalled(PluginInfoModel infoModel)
 	{
-		return IsNewerOrAlreadyInstalled(info.PluginName, info.PluginVersion);
+		return IsNewerOrAlreadyInstalled(infoModel.PluginName, infoModel.PluginVersion);
 	}
 
+	/// <summary>
+	/// Returns true if there are any plugins, that match the name, that have a version greater or equal to the provided version
+	/// </summary>
+	/// <param name="name"></param>
+	/// <param name="version"></param>
+	/// <returns></returns>
 	public static bool IsNewerOrAlreadyInstalled(string name, Version version)
 	{
-		return LoadedPlugins.Any(p => p.PluginInfo.PluginName == name && p.PluginInfo.PluginVersion >= version);
+		return LoadedPlugins.Any(p => p.PluginInfoModel.PluginName == name && p.PluginInfoModel.PluginVersion >= version);
 	}
 
-	public static bool ShouldBeUpdated(string name, Version version, out EldoraPlugin oldPlugin)
+	public static bool ShouldBeUpdated(string name, Version version, out PluginContainer oldPluginContainer)
 	{
-		var plugin = LoadedPlugins.FirstOrDefault(p => p.PluginInfo.PluginName == name);
-		oldPlugin = null;
+		var plugin = LoadedPlugins.FirstOrDefault(p => p.PluginInfoModel.PluginName == name);
+		oldPluginContainer = null;
 		if (plugin == default) return true;
-		if (plugin.PluginInfo.PluginVersion >= version) return false;
-		oldPlugin = plugin;
+		if (plugin.PluginInfoModel.PluginVersion >= version) return false;
+		oldPluginContainer = plugin;
 		return true;
 	}
 	
-	public static bool ShouldBeUpdated(PluginInfo info, out EldoraPlugin oldPlugin)
+	public static bool ShouldBeUpdated(PluginInfoModel infoModel, out PluginContainer oldPluginContainer)
 	{
-		return ShouldBeUpdated(info.PluginName, info.PluginVersion, out oldPlugin);
+		return ShouldBeUpdated(infoModel.PluginName, infoModel.PluginVersion, out oldPluginContainer);
 	}
 }
 
 public class PluginLoadResult
 {
 	public ErrorCode Code { get; }
-	public EldoraPlugin Plugin { get; }
+	public PluginContainer PluginContainer { get; }
 
-	public PluginLoadResult(ErrorCode code, EldoraPlugin plugin)
+	public PluginLoadResult(ErrorCode code, PluginContainer pluginContainer)
 	{
 		Code = code;
-		Plugin = plugin;
+		PluginContainer = pluginContainer;
 	}
 
 	public PluginLoadResult(ErrorCode code)
 	{
 		Code = code;
-		Plugin = null;
+		PluginContainer = null;
 	}
 
-	public PluginLoadResult(EldoraPlugin plugin)
+	public PluginLoadResult(PluginContainer pluginContainer)
 	{
-		Plugin = plugin;
+		PluginContainer = pluginContainer;
 		Code = ErrorCode.None;
 	}
 

@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Eldora.App.Panels;
+namespace Eldora.App.InternalPages;
 
 partial class PluginManagerPane
 {
