@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows.Forms;
 using NLog;
 using NLog.Config;
@@ -35,15 +35,23 @@ internal static class ProgramEntry
 		{
 			FileName = $@"{InternalPaths.LogPath}\log.log",
 			Layout = layout,
-			ArchiveEvery = FileArchivePeriod.Day
+			ArchiveOldFileOnStartup = true
 		};
 		var consoleTarget = new ConsoleTarget("log_console")
 		{
 			Layout = layout
 		};
 
+		var debugLogFile = new FileTarget("debug_log_file")
+		{
+			FileName = $@"{InternalPaths.LogPath}\debug.log",
+			Layout = layout,
+			ArchiveOldFileOnStartup = true
+		};
+
 		config.AddRule(LogLevel.Info, LogLevel.Fatal, consoleTarget);
-		config.AddRule(LogLevel.Debug, LogLevel.Fatal, logfile);
+		config.AddRule(LogLevel.Info, LogLevel.Fatal, logfile);
+		config.AddRule(LogLevel.Debug, LogLevel.Fatal, debugLogFile);
 
 		LogManager.Configuration = config;
 	}

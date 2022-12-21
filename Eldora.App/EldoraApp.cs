@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Windows.Forms;
 using Eldora.App.Plugins;
@@ -14,11 +15,20 @@ public static class EldoraApp
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
 	public static SettingsModel SettingsModel { get; private set; }
 
+	public static readonly JsonSerializerOptions DefaultSerializerOptions = new()
+	{
+		Converters =
+		{
+			new JsonVersionConverter()
+		},
+		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+	};
+
 	private static void LoadPlugins()
 	{
 		var pluginFolderContent = Directory.GetFiles(InternalPaths.PluginPath, "*.zip").ToList();
 
-		var toDelete = new List<SettingsModel.InstalledPluginModel>();
+		var pluginsToDelete = new List<SettingsModel.InstalledPluginModel>();
 
 		foreach (var settingsInstalledPlugin in SettingsModel.InstalledPlugins)
 		{
@@ -47,14 +57,13 @@ public static class EldoraApp
 				break;
 			}
 
-			if (!found)
-			{
-				Log.Warn("Plugin {name} with version {version} not found", settingsInstalledPlugin.Name, settingsInstalledPlugin.Version);
-				toDelete.Add(settingsInstalledPlugin);
-			}
+			if (found) continue;
+
+			Log.Warn("Plugin {name} with version {version} not found", settingsInstalledPlugin.Name, settingsInstalledPlugin.Version);
+			pluginsToDelete.Add(settingsInstalledPlugin);
 		}
 
-		SettingsModel.InstalledPlugins = SettingsModel.InstalledPlugins.Except(toDelete).ToList();
+		SettingsModel.InstalledPlugins = SettingsModel.InstalledPlugins.Except(pluginsToDelete).ToList();
 		SaveSettings();
 	}
 
@@ -67,14 +76,7 @@ public static class EldoraApp
 				LoadDefaultSettings();
 			}
 
-			SettingsModel = JsonSerializer.Deserialize<SettingsModel>(File.ReadAllText(InternalPaths.SettingsPath), new JsonSerializerOptions
-			{
-				Converters =
-				{
-					new JsonVersionConverter()
-				},
-				Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-			});
+			SettingsModel = JsonSerializer.Deserialize<SettingsModel>(File.ReadAllText(InternalPaths.SettingsPath), DefaultSerializerOptions);
 		}
 		catch (JsonException e)
 		{
@@ -103,15 +105,7 @@ public static class EldoraApp
 	public static void SaveSettings()
 	{
 		if (File.Exists(InternalPaths.SettingsPath)) File.Delete(InternalPaths.SettingsPath);
-		File.WriteAllText(InternalPaths.SettingsPath, JsonSerializer.Serialize(SettingsModel, new JsonSerializerOptions
-		{
-			WriteIndented = true,
-			Converters =
-			{
-				new JsonVersionConverter()
-			},
-			Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-		}));
+		File.WriteAllText(InternalPaths.SettingsPath, JsonSerializer.Serialize(SettingsModel, DefaultSerializerOptions));
 	}
 
 	public static void Restart()

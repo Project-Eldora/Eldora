@@ -153,8 +153,6 @@ internal sealed partial class MainWindow : Form
 			splitContainer1.Panel2.Controls.Clear();
 			splitContainer1.Panel2.Controls.Add(_nodeMapping[path]);
 			
-			Log.Info(splitContainer1.Panel2.Controls.Count);
-
 			Log.Info("Opening {path}", path);
 		};
 	}

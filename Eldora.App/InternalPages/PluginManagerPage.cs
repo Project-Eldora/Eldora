@@ -27,7 +27,7 @@ public partial class PluginManagerPane : UserControl
 		Name = "Installed",
 	};
 
-	private readonly List<(PluginRepository repo, string name)> _fetchedRepositories = new();
+	private readonly List<(PluginRepositoryModel repo, string name)> _fetchedRepositories = new();
 
 	public PluginManagerPane()
 	{
@@ -146,15 +146,7 @@ public partial class PluginManagerPane : UserControl
 				using var reader = new StreamReader(stream);
 
 				var fileData = await reader.ReadToEndAsync();
-				var repository = JsonSerializer.Deserialize<PluginRepository>(fileData, new JsonSerializerOptions
-				{
-					PropertyNameCaseInsensitive = true,
-					Converters =
-					{
-						new JsonVersionConverter()
-					},
-					Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-				});
+				var repository = JsonSerializer.Deserialize<PluginRepositoryModel>(fileData, EldoraApp.DefaultSerializerOptions);
 				repository.Url = pluginRepo.Url;
 
 				foreach (var repositoryEntry in repository.Entries)
@@ -174,9 +166,9 @@ public partial class PluginManagerPane : UserControl
 	}
 
 	// TODO: Extract to own file
-	public class PluginRepository
+	public class PluginRepositoryModel
 	{
-		[JsonPropertyName("entries")] public List<PluginEntry> Entries { get; set; } = new();
+		[JsonPropertyName("entries")] public List<PluginEntryModel> Entries { get; set; } = new();
 		[JsonIgnore] public string Url { get; set; }
 
 		public override string ToString()
@@ -188,7 +180,7 @@ public partial class PluginManagerPane : UserControl
 			return sb.ToString();
 		}
 
-		public class PluginEntry
+		public class PluginEntryModel
 		{
 			[JsonPropertyName("name")] public string Name { get; set; }
 			[JsonPropertyName("version")] public Version Version { get; set; }
@@ -217,16 +209,18 @@ public partial class PluginManagerPane : UserControl
 				btnInstallFromRepo.Enabled = false;
 				btnUninstall.Enabled = true;
 				return;
-			case PluginRepository.PluginEntry entry:
+			case PluginRepositoryModel.PluginEntryModel entry:
 				btnInstallFromRepo.Enabled = true;
 				return;
 		}
 	}
 
+	// TODO: Remove duplicate code
+	
 	private void btnInstallFromRepo_Click(object sender, EventArgs e)
 	{
 		if (lvwPlugins.SelectedItems.Count == 0) return;
-		var selectedItem = (PluginRepository.PluginEntry) lvwPlugins.SelectedItems[0].Tag;
+		var selectedItem = (PluginRepositoryModel.PluginEntryModel) lvwPlugins.SelectedItems[0].Tag;
 
 		if (PluginHandler.IsNewerOrAlreadyInstalled(selectedItem.Name, selectedItem.Version))
 		{
@@ -250,6 +244,7 @@ public partial class PluginManagerPane : UserControl
 		WebClient.DownloadFileCompleted += WebClientOnDownloadFileCompleted;
 		WebClient.DownloadFileAsync(new Uri(selectedItem.FullUrl), newFile);
 
+		// Local function to be able to remove the event listener
 		void WebClientOnDownloadFileCompleted(object _, AsyncCompletedEventArgs __)
 		{
 			InstallFromDisk(newFile, updated, plugin);
@@ -302,38 +297,36 @@ public partial class PluginManagerPane : UserControl
 		{
 			MessageBox.Show($@"Failed loading plugin! Error Code: {(int) result.Code} ({result.Code})");
 			File.Delete(filePath);
+			return;
 		}
-		else
+
+		if (!updated)
 		{
-			if (!updated)
+			EldoraApp.SettingsModel.InstalledPlugins.Add(new SettingsModel.InstalledPluginModel
 			{
-				EldoraApp.SettingsModel.InstalledPlugins.Add(new SettingsModel.InstalledPluginModel
-				{
-					Name = result.PluginContainer.PluginInfoModel.PluginName,
-					Version = result.PluginContainer.PluginInfoModel.PluginVersion,
-				});
+				Name = result.PluginContainer.PluginInfoModel.PluginName,
+				Version = result.PluginContainer.PluginInfoModel.PluginVersion,
+			});
 
-				EldoraApp.SaveSettings();
+			EldoraApp.SaveSettings();
 
-				MessageBox.Show($@"Installed Plugin {result.PluginContainer.PluginInfoModel.PluginName} with version {result.PluginContainer.PluginInfoModel.PluginVersion}");
-				PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(result.PluginContainer, PluginChangedEventArgs.PluginChangedEventType.Added));
-			}
-			else
-			{
-				var existing = EldoraApp.SettingsModel.InstalledPlugins.First(p => p.Name == pluginContainer!.PluginInfoModel.PluginName);
-				
-				var pluginIndex = EldoraApp.SettingsModel.InstalledPlugins.FindIndex(p => p.Name == pluginContainer!.PluginInfoModel.PluginName && p.Version == existing.Version);
-				if (pluginIndex >= 0) EldoraApp.SettingsModel.InstalledPlugins.RemoveAt(pluginIndex);
-
-				var updateMessage = $@"Updated Plugin {result.PluginContainer.PluginInfoModel.PluginName} from version {existing.Version} to {result.PluginContainer.PluginInfoModel.PluginVersion}";
-				existing.Version = result.PluginContainer.PluginInfoModel.PluginVersion;
-
-				EldoraApp.SaveSettings();
-
-				PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(null, PluginChangedEventArgs.PluginChangedEventType.Changed));
-				EldoraApp.RequestRestart(@$"{updateMessage}{Environment.NewLine}Eldora must be restarted to complete the updating. Restart now?");
-			}
+			MessageBox.Show($@"Installed Plugin {result.PluginContainer.PluginInfoModel.PluginName} with version {result.PluginContainer.PluginInfoModel.PluginVersion}");
+			PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(result.PluginContainer, PluginChangedEventArgs.PluginChangedEventType.Added));
+			return;
 		}
+
+		var existing = EldoraApp.SettingsModel.InstalledPlugins.First(p => p.Name == pluginContainer!.PluginInfoModel.PluginName);
+
+		var pluginIndex = EldoraApp.SettingsModel.InstalledPlugins.FindIndex(p => p.Name == pluginContainer!.PluginInfoModel.PluginName && p.Version == existing.Version);
+		if (pluginIndex >= 0) EldoraApp.SettingsModel.InstalledPlugins.RemoveAt(pluginIndex);
+
+		var updateMessage = $@"Updated Plugin {result.PluginContainer.PluginInfoModel.PluginName} from version {existing.Version} to {result.PluginContainer.PluginInfoModel.PluginVersion}";
+		existing.Version = result.PluginContainer.PluginInfoModel.PluginVersion;
+
+		EldoraApp.SaveSettings();
+
+		PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(null, PluginChangedEventArgs.PluginChangedEventType.Changed));
+		EldoraApp.RequestRestart(@$"{updateMessage}{Environment.NewLine}Eldora must be restarted to complete the updating. Restart now?");
 	}
 
 	private void btnUninstall_Click(object sender, EventArgs e)

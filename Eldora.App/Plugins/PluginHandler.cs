@@ -151,14 +151,7 @@ public static class PluginHandler
 
 	private static PluginInfoModel ReadPluginFile(byte[] data)
 	{
-		return JsonSerializer.Deserialize<PluginInfoModel>(ConvertBytesToString(data), new JsonSerializerOptions
-		{
-			Converters =
-			{
-				new JsonVersionConverter()
-			},
-			Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-		});
+		return JsonSerializer.Deserialize<PluginInfoModel>(ConvertBytesToString(data), EldoraApp.DefaultSerializerOptions);
 	}
 
 	private static string ConvertBytesToString(byte[] bytes)
