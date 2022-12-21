@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
-using Eldora.App.Panels;
+using Eldora.App.InternalPages;
 using Eldora.App.Plugins;
 using Eldora.PluginApi.Attributes;
 using Eldora.WinUtils;
@@ -22,19 +22,6 @@ internal sealed partial class MainWindow : Form
 	public MainWindow()
 	{
 		InitializeComponent();
-
-		AddRootNodes();
-		AddInternalPages();
-		AddPluginPages();
-
-
-		PluginHandler.PluginsGotChanged += (_, args) =>
-		{
-			if (args.Type != PluginChangedEventArgs.PluginChangedEventType.Added) return;
-			AddPagesForPlugin(args.Plugin);
-		};
-
-		sidebarTreeView.ExpandAll();
 	}
 
 	private void AddInternalPages()
@@ -66,7 +53,7 @@ internal sealed partial class MainWindow : Form
 		}
 	}
 
-	private void AddPagesForPlugin(EldoraPlugin loaded)
+	private void AddPagesForPlugin(PluginContainer loaded)
 	{
 		var toAdd = new List<(ToolsPageAttribute, Control control)>();
 		foreach (var type in loaded.PluginAssembly.GetExportedTypes())
@@ -183,5 +170,24 @@ internal sealed partial class MainWindow : Form
 	private void toolStripButton1_Click(object sender, EventArgs e)
 	{
 		//_settingsWindow.ShowDialog(this);
+	}
+	
+	private void MainWindow_Load(object sender, EventArgs e)
+	{
+		AddRootNodes();
+		AddInternalPages();
+		AddPluginPages();
+
+		PluginHandler.PluginsGotChanged += (_, args) =>
+		{
+			if (args.Type != PluginChangedEventArgs.PluginChangedEventType.Added) return;
+			AddPagesForPlugin(args.PluginContainer);
+		};
+
+		sidebarTreeView.ExpandAll();
+	}
+
+	private void MainWindow_Resize(object sender, EventArgs e)
+	{
 	}
 }
