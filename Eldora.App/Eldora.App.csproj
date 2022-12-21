@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>false</Deterministic>
+    <ApplicationIcon>..\Icons\icon@128.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -78,7 +79,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Eldora.cs" />
+    <Compile Include="EldoraApp.cs" />
     <Compile Include="Panels\ChangelogPane.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -122,6 +123,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <None Include="..\Icons\icon@128.ico">
+      <Link>icon@128.ico</Link>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -140,6 +144,10 @@
     <Folder Include="Panels\" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Eldora.Components\Eldora.Components.csproj">
+      <Project>{13f36114-5568-40da-b9f7-1e8a62dc10c9}</Project>
+      <Name>Eldora.Components</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Eldora.PluginApi\Eldora.PluginApi.csproj">
       <Project>{d9453f57-c547-43e3-9dd6-fcf7fcb13a68}</Project>
       <Name>Eldora.PluginApi</Name>

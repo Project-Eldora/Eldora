@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -94,5 +95,10 @@ public static class WinFormsExtensions
 		{
 			e.Cancel = true;
 		}
+	}
+
+	public static Image ReadEmbeddedRessourceImage(this Assembly assembly, string searchPattern)
+	{
+		return FormsUtils.ReadEmbeddedRessourceImage(assembly, searchPattern);
 	}
 }

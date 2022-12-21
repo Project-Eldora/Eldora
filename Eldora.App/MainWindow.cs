@@ -71,13 +71,10 @@ internal sealed partial class MainWindow : Form
 		var toAdd = new List<(ToolsPageAttribute, Control control)>();
 		foreach (var type in loaded.PluginAssembly.GetExportedTypes())
 		{
-			if (Attribute.IsDefined(type, typeof(ToolsPageAttribute)))
-			{
-				var result = Activator.CreateInstance(type);
-				
-				Control control = (Control) result;
-				toAdd.Add((type.GetCustomAttribute<ToolsPageAttribute>(), control));
-			}
+			if (!Attribute.IsDefined(type, typeof(ToolsPageAttribute))) continue;
+			
+			var control = (Control)Activator.CreateInstance(type);
+			toAdd.Add((type.GetCustomAttribute<ToolsPageAttribute>(), control));
 		}
 
 		toAdd.ForEach(AddPagePath);
@@ -107,7 +104,7 @@ internal sealed partial class MainWindow : Form
 			lastNode = foundNode;
 		}
 
-		MapControlToNode(_toolsNode.Name + "/" + string.Join("/", mappedPage.attribute.PagePathWithTitle), mappedPage.page);
+		MapControlToNode(_toolsNode.Name + "\\" + string.Join("\\", mappedPage.attribute.PagePathWithTitle), mappedPage.page);
 	}
 
 	#region RootNodes
@@ -159,15 +156,17 @@ internal sealed partial class MainWindow : Form
 		{
 			var path = sidebarTreeView.SelectedNode.FullPath;
 
-			if (path.Contains("/"))
+			if (path.Contains("\\"))
 			{
-				Log.Info("Path({path}) containts / ", path);
+				Log.Info("Path({path}) containts \\ ", path);
 			}
 
 			if (!_nodeMapping.ContainsKey(path)) return;
 
-			contentPanel.Controls.Clear();
-			contentPanel.Controls.Add(_nodeMapping[path]);
+			splitContainer1.Panel2.Controls.Clear();
+			splitContainer1.Panel2.Controls.Add(_nodeMapping[path]);
+			
+			Log.Info(splitContainer1.Panel2.Controls.Count);
 
 			Log.Info("Opening {path}", path);
 		};

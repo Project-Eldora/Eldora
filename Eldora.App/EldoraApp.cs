@@ -9,7 +9,7 @@ using Eldora.Utils;
 
 namespace Eldora.App;
 
-public static class Eldora
+public static class EldoraApp
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
 	public static Settings Settings { get; private set; }

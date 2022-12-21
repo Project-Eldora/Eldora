@@ -137,7 +137,7 @@ public partial class PluginManagerPane : UserControl
 	private async void FetchRepositories()
 	{
 		_fetchedRepositories.Clear();
-		foreach (var pluginRepo in Eldora.Settings.PluginRepositories)
+		foreach (var pluginRepo in EldoraApp.Settings.PluginRepositories)
 		{
 			try
 			{
@@ -308,31 +308,31 @@ public partial class PluginManagerPane : UserControl
 		{
 			if (!updated)
 			{
-				Eldora.Settings.InstalledPlugins.Add(new Settings.InstalledPlugin
+				EldoraApp.Settings.InstalledPlugins.Add(new Settings.InstalledPlugin
 				{
 					Name = result.Plugin.PluginInfo.PluginName,
 					Version = result.Plugin.PluginInfo.PluginVersion,
 				});
 
-				Eldora.SaveSettings();
+				EldoraApp.SaveSettings();
 
 				MessageBox.Show($@"Installed Plugin {result.Plugin.PluginInfo.PluginName} with version {result.Plugin.PluginInfo.PluginVersion}");
 				PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(result.Plugin, PluginChangedEventArgs.PluginChangedEventType.Added));
 			}
 			else
 			{
-				var existing = Eldora.Settings.InstalledPlugins.First(p => p.Name == plugin!.PluginInfo.PluginName);
+				var existing = EldoraApp.Settings.InstalledPlugins.First(p => p.Name == plugin!.PluginInfo.PluginName);
 				
-				var pluginIndex = Eldora.Settings.InstalledPlugins.FindIndex(p => p.Name == plugin!.PluginInfo.PluginName && p.Version == existing.Version);
-				if (pluginIndex >= 0) Eldora.Settings.InstalledPlugins.RemoveAt(pluginIndex);
+				var pluginIndex = EldoraApp.Settings.InstalledPlugins.FindIndex(p => p.Name == plugin!.PluginInfo.PluginName && p.Version == existing.Version);
+				if (pluginIndex >= 0) EldoraApp.Settings.InstalledPlugins.RemoveAt(pluginIndex);
 
 				var updateMessage = $@"Updated Plugin {result.Plugin.PluginInfo.PluginName} from version {existing.Version} to {result.Plugin.PluginInfo.PluginVersion}";
 				existing.Version = result.Plugin.PluginInfo.PluginVersion;
 
-				Eldora.SaveSettings();
+				EldoraApp.SaveSettings();
 
 				PluginHandler.RaisePluginsChangedEvent(this, new PluginChangedEventArgs(null, PluginChangedEventArgs.PluginChangedEventType.Changed));
-				Eldora.RequestRestart(@$"{updateMessage}{Environment.NewLine}Eldora must be restarted to complete the updating. Restart now?");
+				EldoraApp.RequestRestart(@$"{updateMessage}{Environment.NewLine}Eldora must be restarted to complete the updating. Restart now?");
 			}
 		}
 	}
@@ -344,12 +344,12 @@ public partial class PluginManagerPane : UserControl
 		var selectedItem = (EldoraPlugin) lvwPlugins.SelectedItems[0].Tag;
 		File.Delete(selectedItem.LocalFilePath);
 
-		var pluginIndex = Eldora.Settings.InstalledPlugins.FindIndex(p => p.Name == selectedItem.PluginInfo.PluginName && p.Version == selectedItem.PluginInfo.PluginVersion);
-		if (pluginIndex >= 0) Eldora.Settings.InstalledPlugins.RemoveAt(pluginIndex);
+		var pluginIndex = EldoraApp.Settings.InstalledPlugins.FindIndex(p => p.Name == selectedItem.PluginInfo.PluginName && p.Version == selectedItem.PluginInfo.PluginVersion);
+		if (pluginIndex >= 0) EldoraApp.Settings.InstalledPlugins.RemoveAt(pluginIndex);
 
-		Eldora.SaveSettings();
+		EldoraApp.SaveSettings();
 
-		Eldora.RequestRestart(@"Eldora must be restarted to complete the uninstalling. Restart now?");
+		EldoraApp.RequestRestart(@"Eldora must be restarted to complete the uninstalling. Restart now?");
 	}
 
 	private void btnFetchRepos_Click(object sender, EventArgs e)

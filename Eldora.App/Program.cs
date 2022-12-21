@@ -16,13 +16,13 @@ internal static class Program
 	{
 		Paths.CreateFolderStructure();
 		InitiateLogging();
-		Eldora.Initalize();
+		EldoraApp.Initalize();
 
 		Application.EnableVisualStyles();
 		Application.SetCompatibleTextRenderingDefault(false);
 		Application.Run(new MainWindow());
 
-		Eldora.SaveSettings();
+		EldoraApp.SaveSettings();
 	}
 
 	private static void InitiateLogging()
