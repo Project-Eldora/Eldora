@@ -188,4 +188,9 @@ internal sealed partial class MainWindow : Form
 	private void MainWindow_Resize(object sender, EventArgs e)
 	{
 	}
+
+	private void showHideNavigationBar_Click(object sender, EventArgs e)
+	{
+		splitContainer1.Panel1Collapsed = !splitContainer1.Panel1Collapsed;
+	}
 }
