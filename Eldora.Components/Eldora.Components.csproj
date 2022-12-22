@@ -57,8 +57,8 @@
       </ProjectReference>
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Include="Resources\chevron_down.png" />
       <EmbeddedResource Include="Resources\chevron_right.png" />
+      <EmbeddedResource Include="Resources\chevron_down.png" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -123,9 +123,10 @@
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="showHideNavigationBar.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
-        iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABGdBTUEAALGPC/xhBQAAAE9JREFUaEPt
-        1SEOwEAMA8H8vE9vcSWTkPOBGWmpSUAGAIDovay1NNJsLY00A+Cs57LW0jNptpZGmq2lMzYD4Kz0TJqt
-        pZFma2mkGQAAPzMfhIBCqOPkAuUAAAAASUVORK5CYII=
+        iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
+        YQUAAAB6SURBVGhD7dixDYAwDERRj8QIjMAIjMCmjJBRwNdTJIWVQ/lP+r1dgBEBAAAMndlllmbqdmeP
+        WS3rxgIFrbXAnh1maSYAq/j9W4hDVhALzG5oAT00+v52SjMBWMWW6XQ7pZm6ccgKYoHZDS2g0/31e29m
+        mgkAABiJeAHtZRKXFmzxVAAAAABJRU5ErkJggg==
 </value>
   </data>
   <metadata name="$this.Locked" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">

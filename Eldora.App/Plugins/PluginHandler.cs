@@ -133,7 +133,8 @@ public static class PluginHandler
 		var plugin = new PluginContainer(pluginInstance, infoModel, mainAssembly, pluginPath);
 		LoadedPlugins.Add(plugin);
 		
-		plugin.OnLoad();
+		// Calls the on load method in the plugin
+		plugin.CallLoad();
 		
 		return new PluginLoadResult(plugin);
 	}

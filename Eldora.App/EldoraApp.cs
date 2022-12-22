@@ -21,9 +21,13 @@ public static class EldoraApp
 		{
 			new JsonVersionConverter()
 		},
+		WriteIndented = true,
 		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 	};
 
+	/// <summary>
+	/// Loads the installed plugins
+	/// </summary>
 	private static void LoadPlugins()
 	{
 		var pluginFolderContent = Directory.GetFiles(InternalPaths.PluginPath, "*.zip").ToList();
@@ -67,6 +71,9 @@ public static class EldoraApp
 		SaveSettings();
 	}
 
+	/// <summary>
+	/// Loads the settings from settings.json
+	/// </summary>
 	private static void LoadSettings()
 	{
 		try
@@ -102,12 +109,18 @@ public static class EldoraApp
 		SaveSettings();
 	}
 
+	/// <summary>
+	/// Saves the settings to settings.json
+	/// </summary>
 	public static void SaveSettings()
 	{
 		if (File.Exists(InternalPaths.SettingsPath)) File.Delete(InternalPaths.SettingsPath);
 		File.WriteAllText(InternalPaths.SettingsPath, JsonSerializer.Serialize(SettingsModel, DefaultSerializerOptions));
 	}
 
+	/// <summary>
+	/// Restarts the app
+	/// </summary>
 	public static void Restart()
 	{
 		Application.Restart();
@@ -122,9 +135,19 @@ public static class EldoraApp
 		}
 	}
 
-	public static void Initalize()
+	public static void Initialize()
 	{
 		LoadSettings();
 		LoadPlugins();
+	}
+
+	public static void Terminate()
+	{
+		foreach (var pluginContainer in PluginHandler.LoadedPlugins)
+		{
+			pluginContainer.CallUnload();
+		}
+
+		SaveSettings();
 	}
 }

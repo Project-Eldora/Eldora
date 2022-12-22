@@ -47,7 +47,7 @@ private void InitializeComponent()
 	// 
 	this.splitContainer1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 	this.splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-	this.splitContainer1.Location = new System.Drawing.Point(98, 0);
+	this.splitContainer1.Location = new System.Drawing.Point(34, 0);
 	this.splitContainer1.Margin = new System.Windows.Forms.Padding(10);
 	this.splitContainer1.MaxSizedPanel = Eldora.Components.Standard.EldoraSplitContainer.MaxSizedPanelType.Panel1;
 	this.splitContainer1.Name = "splitContainer1";
@@ -60,10 +60,10 @@ private void InitializeComponent()
 	// splitContainer1.Panel2
 	// 
 	this.splitContainer1.Panel2.AutoScroll = true;
-	this.splitContainer1.Panel2MinSize = 712;
+	this.splitContainer1.Panel2MinSize = 776;
 	this.splitContainer1.PanelMaxSize = 450;
-	this.splitContainer1.Size = new System.Drawing.Size(1166, 681);
-	this.splitContainer1.SplitterDistance = 184;
+	this.splitContainer1.Size = new System.Drawing.Size(1230, 681);
+	this.splitContainer1.SplitterDistance = 194;
 	this.splitContainer1.TabIndex = 3;
 	// 
 	// sidebarTreeView
@@ -75,7 +75,7 @@ private void InitializeComponent()
 	this.sidebarTreeView.Location = new System.Drawing.Point(0, 0);
 	this.sidebarTreeView.MarkerSpacing = 20;
 	this.sidebarTreeView.Name = "sidebarTreeView";
-	this.sidebarTreeView.Size = new System.Drawing.Size(182, 679);
+	this.sidebarTreeView.Size = new System.Drawing.Size(192, 679);
 	this.sidebarTreeView.TabIndex = 0;
 	// 
 	// sidebarMenuStrip
@@ -85,7 +85,7 @@ private void InitializeComponent()
 	this.sidebarMenuStrip.Location = new System.Drawing.Point(0, 0);
 	this.sidebarMenuStrip.Name = "sidebarMenuStrip";
 	this.sidebarMenuStrip.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
-	this.sidebarMenuStrip.Size = new System.Drawing.Size(98, 681);
+	this.sidebarMenuStrip.Size = new System.Drawing.Size(34, 681);
 	this.sidebarMenuStrip.TabIndex = 4;
 	this.sidebarMenuStrip.Text = "menuStrip1";
 	// 
@@ -95,7 +95,8 @@ private void InitializeComponent()
 	this.showHideNavigationBar.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
 	this.showHideNavigationBar.Image = ((System.Drawing.Image) (resources.GetObject("showHideNavigationBar.Image")));
 	this.showHideNavigationBar.Name = "showHideNavigationBar";
-	this.showHideNavigationBar.Size = new System.Drawing.Size(85, 20);
+	this.showHideNavigationBar.ShowShortcutKeys = false;
+	this.showHideNavigationBar.Size = new System.Drawing.Size(21, 20);
 	this.showHideNavigationBar.ToolTipText = "Show/Hide Navigationbar";
 	this.showHideNavigationBar.Click += new System.EventHandler(this.showHideNavigationBar_Click);
 	// 

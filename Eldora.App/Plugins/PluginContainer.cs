@@ -27,7 +27,7 @@ public sealed class PluginContainer
 		LocalFilePath = localFilePath;
 	}
 
-	public void OnLoad()
+	public void CallLoad()
 	{
 		foreach (var methodInfo in _mainPluginEntry.GetType().GetMethods())
 		{
@@ -36,7 +36,7 @@ public sealed class PluginContainer
 		}
 	}
 
-	public void OnUnload()
+	public void CallUnload()
 	{
 		foreach (var methodInfo in _mainPluginEntry.GetType().GetMethods())
 		{
