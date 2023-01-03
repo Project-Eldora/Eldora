@@ -1,27 +1,52 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Eldora.App;
-
-internal static class InternalPaths
+static internal class InternalPaths
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
-	
-	public static string RootPath { get; private set; }
-	public static string PluginPath  { get; private set; }
-	public static string LanguagePath  { get; private set; }
-	public static string LogPath { get; private set; }
-	public static string SettingsPath { get; private set; }
-	
+
+	/// <summary>
+	/// The root path for the application data
+	/// </summary>
+	public static string RootPath { get; private set; } = "";
+	/// <summary>
+	/// The path for the application extensions
+	/// </summary>
+	public static string PackagesPath { get; private set; } = "";
+	/// <summary>
+	/// The path for the package projects
+	/// </summary>
+	public static string PackageProjectsPath { get; private set; } = "";
+	/// <summary>
+	/// The path for languages
+	/// </summary>
+	public static string LanguagePath { get; private set; } = "";
+	/// <summary>
+	/// The path for the logs
+	/// </summary>
+	public static string LogPath { get; private set; } = "";
+	/// <summary>
+	/// The path for the global settings file
+	/// </summary>
+	public static string SettingsFilePath { get; private set; } = "";
+
 	public static void CreateFolderStructure()
 	{
 		RootPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\Eldora";
-		PluginPath = $@"{RootPath}\Plugins"; 
+		PackagesPath = $@"{RootPath}\Packages";
+		LanguagePath = $@"{RootPath}\Langs";
 		LogPath = $@"{RootPath}\Logs";
-		SettingsPath = $@"{RootPath}\settings.json";
+		SettingsFilePath = $@"{RootPath}\settings.json";
+
+		PackageProjectsPath = $@"{RootPath}\PackageProjects";
 
 		CreateFolder(RootPath);
-		CreateFolder(PluginPath);
+		CreateFolder(PackagesPath);
+		CreateFolder(PackageProjectsPath);
 		CreateFolder(LogPath);
 	}
 
@@ -29,10 +54,10 @@ internal static class InternalPaths
 	{
 		if (Directory.Exists(path))
 		{
-			Log.Info("{path} already exists", path);
+			Log.Info("{path} already exists. SKIPPING", path);
 			return;
 		}
-		
+
 		Log.Info("Creating {path}", path);
 		Directory.CreateDirectory(path);
 	}

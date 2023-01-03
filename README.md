@@ -21,8 +21,3 @@
 
 ### Spell List
 Added backend
-
-## Creating a Plugin
-To create a plugin use the PluginPacker
-
-You need all the dll files and the plugin.json file.

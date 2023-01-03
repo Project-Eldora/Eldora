@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
-using System.Windows.Forms;
-using Eldora.App.Plugins;
-using Eldora.Utils;
+﻿using System.Text.Json;
+using Eldora.Extensions;
 
 namespace Eldora.App;
-
-public static class EldoraApp
+internal class EldoraApp
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
-	public static SettingsModel SettingsModel { get; private set; }
+	//public static SettingsModel SettingsModel { get; private set; }
 
 	public static readonly JsonSerializerOptions DefaultSerializerOptions = new()
 	{
@@ -30,45 +22,31 @@ public static class EldoraApp
 	/// </summary>
 	private static void LoadPlugins()
 	{
-		var pluginFolderContent = Directory.GetFiles(InternalPaths.PluginPath, "*.zip").ToList();
+		//var pluginFolderContent = Directory.GetFiles(InternalPaths.PackagesPath, "*.zip").ToList();
 
-		var pluginsToDelete = new List<SettingsModel.InstalledPluginModel>();
+		//var pluginsToDelete = new List<SettingsModel.InstalledPluginModel>();
 
-		foreach (var settingsInstalledPlugin in SettingsModel.InstalledPlugins)
-		{
-			var found = false;
+		//foreach (var settingsInstalledPlugin in SettingsModel.InstalledPlugins)
+		//{
+		//	var found = false;
 
-			foreach (var file in pluginFolderContent)
-			{
-				if (!File.Exists(file)) continue;
+		//	foreach (var file in pluginFolderContent)
+		//	{
+		//		if (!File.Exists(file)) continue;
+		//		found = true;
 
-				var info = PluginHandler.GetPluginInfo(file);
-				if (info == null) continue;
+		//		pluginFolderContent.Remove(file);
+		//		break;
+		//	}
 
-				if (info.PluginName != settingsInstalledPlugin.Name) continue;
-				if (info.PluginVersion != settingsInstalledPlugin.Version) continue;
+		//	if (found) continue;
 
-				var loadResult = PluginHandler.LoadPlugin(file);
-				if (loadResult.Code != PluginLoadResult.ErrorCode.None)
-				{
-					Log.Info("Could not load plugin {path}. SKIPPING", file);
-					continue;
-				}
+		//	Log.Warn("Plugin {name} with version {version} not found", settingsInstalledPlugin.Name, settingsInstalledPlugin.Version);
+		//	pluginsToDelete.Add(settingsInstalledPlugin);
+		//}
 
-				found = true;
-
-				pluginFolderContent.Remove(file);
-				break;
-			}
-
-			if (found) continue;
-
-			Log.Warn("Plugin {name} with version {version} not found", settingsInstalledPlugin.Name, settingsInstalledPlugin.Version);
-			pluginsToDelete.Add(settingsInstalledPlugin);
-		}
-
-		SettingsModel.InstalledPlugins = SettingsModel.InstalledPlugins.Except(pluginsToDelete).ToList();
-		SaveSettings();
+		//SettingsModel.InstalledPlugins = SettingsModel.InstalledPlugins.Except(pluginsToDelete).ToList();
+		//SaveSettings();
 	}
 
 	/// <summary>
@@ -76,37 +54,37 @@ public static class EldoraApp
 	/// </summary>
 	private static void LoadSettings()
 	{
-		try
-		{
-			if (!File.Exists(InternalPaths.SettingsPath))
-			{
-				LoadDefaultSettings();
-			}
+		//try
+		//{
+		//	if (!File.Exists(InternalPaths.SettingsFilePath))
+		//	{
+		//		LoadDefaultSettings();
+		//	}
 
-			SettingsModel = JsonSerializer.Deserialize<SettingsModel>(File.ReadAllText(InternalPaths.SettingsPath), DefaultSerializerOptions);
-		}
-		catch (JsonException e)
-		{
-			Log.Error(e);
-			LoadDefaultSettings();
-		}
+		//	SettingsModel = JsonSerializer.Deserialize<SettingsModel>(File.ReadAllText(InternalPaths.SettingsFilePath), DefaultSerializerOptions);
+		//}
+		//catch (JsonException e)
+		//{
+		//	Log.Error(e);
+		//	LoadDefaultSettings();
+		//}
 	}
 
 	private static void LoadDefaultSettings()
 	{
-		SettingsModel = new SettingsModel
-		{
-			PluginRepositories =
-			{
-				new SettingsModel.PluginRepositoryModel
-				{
-					Name = "Default",
-					Url = "https://project-eldora.github.io/EldoraPlugins/plugins.json"
-				}
-			},
-		};
+		//SettingsModel = new SettingsModel
+		//{
+		//	PluginRepositories =
+		//	{
+		//		new SettingsModel.PluginRepositoryModel
+		//		{
+		//			Name = "Default",
+		//			Url = "https://project-eldora.github.io/EldoraPlugins/plugins.json"
+		//		}
+		//	},
+		//};
 
-		SaveSettings();
+		//SaveSettings();
 	}
 
 	/// <summary>
@@ -114,8 +92,8 @@ public static class EldoraApp
 	/// </summary>
 	public static void SaveSettings()
 	{
-		if (File.Exists(InternalPaths.SettingsPath)) File.Delete(InternalPaths.SettingsPath);
-		File.WriteAllText(InternalPaths.SettingsPath, JsonSerializer.Serialize(SettingsModel, DefaultSerializerOptions));
+		//if (File.Exists(InternalPaths.SettingsFilePath)) File.Delete(InternalPaths.SettingsFilePath);
+		//File.WriteAllText(InternalPaths.SettingsFilePath, JsonSerializer.Serialize(SettingsModel, DefaultSerializerOptions));
 	}
 
 	/// <summary>
@@ -129,24 +107,18 @@ public static class EldoraApp
 
 	public static void RequestRestart(string message)
 	{
-		if (MessageBox.Show(message, @"Info", MessageBoxButtons.YesNo) == DialogResult.Yes)
-		{
-			Restart();
-		}
+		MessageBoxes.RequestYesNoConfirmation(message, @"Info", MessageBoxIcon.Information, confirmationCallback: Restart);
 	}
 
-	public static void Initialize()
+	public static void Startup()
 	{
 		LoadSettings();
 		LoadPlugins();
 	}
 
-	public static void Terminate()
+	public static void Shutdown()
 	{
-		foreach (var pluginContainer in PluginHandler.LoadedPlugins)
-		{
-			pluginContainer.CallUnload();
-		}
+		// unload extension
 
 		SaveSettings();
 	}

@@ -481,5 +481,5 @@ fabric.properties
 #Eldora
 BuiltPlugins/
 Installer/
-/Plugins/
+/Extensions/
 /OnlinePluginList/
