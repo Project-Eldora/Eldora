@@ -78,9 +78,9 @@ public class PackageProject
 	/// </summary>
 	/// <param name="fullPath"></param>
 	/// <returns></returns>
-	private string ConvertFullPathToProjectPath(string fullPath)
+	private static string ConvertFullPathToProjectPath(string fullPath)
 	{
-		return fullPath.Substring(fullPath.LastIndexOf("\\") + 1);
+		return fullPath[(fullPath.LastIndexOf("\\") + 1)..];
 	}
 
 	/// <summary>
@@ -344,6 +344,7 @@ public class PackageProjectMetaModel
 
 	[XmlArrayItem("File")]
 	public List<PackageProjectFileModel> LibraryFiles { get; set; } = new();
+
 	[XmlArrayItem("File")]
 	public List<PackageProjectFileModel> AdditionalFiles { get; set; } = new();
 

@@ -28,15 +28,13 @@ partial class PackageCreatorEditorPanel
 	/// </summary>
 	private void InitializeComponent()
 	{
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(PackageCreatorEditorPanel));
+			this.components = new System.ComponentModel.Container();
 			this.eldoraSplitContainer1 = new Eldora.UI.Components.Standard.EldoraSplitContainer();
-			this.tlpMetadata = new System.Windows.Forms.TableLayoutPanel();
-			this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-			this.tsbEditSave = new System.Windows.Forms.ToolStripButton();
+			this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+			this.packageCreatorMetaEditorPanel = new Eldora.App.InternalPages.PackageCreator.PackageCreatorMetaEditorPanel();
 			((System.ComponentModel.ISupportInitialize)(this.eldoraSplitContainer1)).BeginInit();
 			this.eldoraSplitContainer1.Panel1.SuspendLayout();
 			this.eldoraSplitContainer1.SuspendLayout();
-			this.toolStrip1.SuspendLayout();
 			this.SuspendLayout();
 			// 
 			// eldoraSplitContainer1
@@ -49,8 +47,7 @@ partial class PackageCreatorEditorPanel
 			// 
 			// eldoraSplitContainer1.Panel1
 			// 
-			this.eldoraSplitContainer1.Panel1.Controls.Add(this.tlpMetadata);
-			this.eldoraSplitContainer1.Panel1.Controls.Add(this.toolStrip1);
+			this.eldoraSplitContainer1.Panel1.Controls.Add(this.packageCreatorMetaEditorPanel);
 			this.eldoraSplitContainer1.Panel1MaxSize = 0;
 			this.eldoraSplitContainer1.Panel1MinSize = 400;
 			this.eldoraSplitContainer1.Panel2MinSize = 400;
@@ -58,39 +55,18 @@ partial class PackageCreatorEditorPanel
 			this.eldoraSplitContainer1.SplitterDistance = 400;
 			this.eldoraSplitContainer1.TabIndex = 0;
 			// 
-			// tlpMetadata
+			// contextMenuStrip1
 			// 
-			this.tlpMetadata.AutoScroll = true;
-			this.tlpMetadata.ColumnCount = 2;
-			this.tlpMetadata.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this.tlpMetadata.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tlpMetadata.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.tlpMetadata.Location = new System.Drawing.Point(0, 25);
-			this.tlpMetadata.Name = "tlpMetadata";
-			this.tlpMetadata.RowCount = 1;
-			this.tlpMetadata.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tlpMetadata.Size = new System.Drawing.Size(398, 666);
-			this.tlpMetadata.TabIndex = 0;
+			this.contextMenuStrip1.Name = "contextMenuStrip1";
+			this.contextMenuStrip1.Size = new System.Drawing.Size(61, 4);
 			// 
-			// toolStrip1
+			// packageCreatorMetaEditorPanel
 			// 
-			this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.tsbEditSave});
-			this.toolStrip1.Location = new System.Drawing.Point(0, 0);
-			this.toolStrip1.Name = "toolStrip1";
-			this.toolStrip1.Size = new System.Drawing.Size(398, 25);
-			this.toolStrip1.TabIndex = 0;
-			this.toolStrip1.Text = "toolStrip1";
-			// 
-			// tsbEditSave
-			// 
-			this.tsbEditSave.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
-			this.tsbEditSave.Image = ((System.Drawing.Image)(resources.GetObject("tsbEditSave.Image")));
-			this.tsbEditSave.ImageTransparentColor = System.Drawing.Color.Magenta;
-			this.tsbEditSave.Name = "tsbEditSave";
-			this.tsbEditSave.Size = new System.Drawing.Size(60, 22);
-			this.tsbEditSave.Text = "Edit/Save";
-			this.tsbEditSave.Click += new System.EventHandler(this.TsbEditSave_Click);
+			this.packageCreatorMetaEditorPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.packageCreatorMetaEditorPanel.Location = new System.Drawing.Point(0, 0);
+			this.packageCreatorMetaEditorPanel.Name = "packageCreatorMetaEditorPanel";
+			this.packageCreatorMetaEditorPanel.Size = new System.Drawing.Size(398, 691);
+			this.packageCreatorMetaEditorPanel.TabIndex = 0;
 			// 
 			// PackageCreatorEditorPanel
 			// 
@@ -100,11 +76,8 @@ partial class PackageCreatorEditorPanel
 			this.Name = "PackageCreatorEditorPanel";
 			this.Size = new System.Drawing.Size(980, 693);
 			this.eldoraSplitContainer1.Panel1.ResumeLayout(false);
-			this.eldoraSplitContainer1.Panel1.PerformLayout();
 			((System.ComponentModel.ISupportInitialize)(this.eldoraSplitContainer1)).EndInit();
 			this.eldoraSplitContainer1.ResumeLayout(false);
-			this.toolStrip1.ResumeLayout(false);
-			this.toolStrip1.PerformLayout();
 			this.ResumeLayout(false);
 
 	}
@@ -112,7 +85,6 @@ partial class PackageCreatorEditorPanel
 	#endregion
 
 	private UI.Components.Standard.EldoraSplitContainer eldoraSplitContainer1;
-	private TableLayoutPanel tlpMetadata;
-	private ToolStrip toolStrip1;
-	private ToolStripButton tsbEditSave;
+	private ContextMenuStrip contextMenuStrip1;
+	private PackageCreatorMetaEditorPanel packageCreatorMetaEditorPanel;
 }
