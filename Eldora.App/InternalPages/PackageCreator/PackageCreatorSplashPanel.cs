@@ -11,17 +11,26 @@ using Eldora.InputBoxes;
 
 namespace Eldora.App.InternalPages.PackageCreator;
 
-public partial class PackageControlSplashPanel : UserControl
+public partial class PackageCreatorSplashPanel : UserControl
 {
 	public event EventHandler<string> CreateButtonPressed;
 	public event EventHandler<string> OpenButtonPressed;
 
-	public PackageControlSplashPanel()
+	private readonly OpenFileDialog _openFileDialog;
+
+	public PackageCreatorSplashPanel()
 	{
 		InitializeComponent();
+
+		_openFileDialog = new OpenFileDialog
+		{
+			Filter = "Eldora Project File|project.eldprj",
+			Multiselect = false,
+			InitialDirectory = InternalPaths.PackageProjectsPath
+		};
 	}
 
-	private void btnCreateNew_Click(object sender, EventArgs e)
+	private void BtnCreateNew_Click(object sender, EventArgs e)
 	{
 		if (StringInputDialog.Show("Project Name", "Enter a name for a new Package Project:", out var name, ValidateInput, "Text must not be empty") == DialogResult.OK)
 		{
@@ -32,5 +41,11 @@ public partial class PackageControlSplashPanel : UserControl
 	private bool ValidateInput(string input)
 	{
 		return !string.IsNullOrEmpty(input);
+	}
+
+	private void BtnOpenExisting_Click(object sender, EventArgs e)
+	{
+		if(_openFileDialog.ShowDialog(this) != DialogResult.OK) { return; }
+		OpenButtonPressed?.Invoke(this, _openFileDialog.FileName);
 	}
 }

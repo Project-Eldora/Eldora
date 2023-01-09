@@ -1,6 +1,6 @@
 ﻿namespace Eldora.App.InternalPages.PackageCreator;
 
-partial class PackageControlSplashPanel
+partial class PackageCreatorSplashPanel
 {
 	/// <summary> 
 	/// Erforderliche Designervariable.
@@ -62,7 +62,7 @@ partial class PackageControlSplashPanel
 			this.btnCreateNew.TabIndex = 0;
 			this.btnCreateNew.Text = "Create new Package";
 			this.btnCreateNew.UseVisualStyleBackColor = true;
-			this.btnCreateNew.Click += new System.EventHandler(this.btnCreateNew_Click);
+			this.btnCreateNew.Click += new System.EventHandler(this.BtnCreateNew_Click);
 			// 
 			// btnOpenExisting
 			// 
@@ -73,13 +73,14 @@ partial class PackageControlSplashPanel
 			this.btnOpenExisting.TabIndex = 1;
 			this.btnOpenExisting.Text = "Open existing Package";
 			this.btnOpenExisting.UseVisualStyleBackColor = true;
+			this.btnOpenExisting.Click += new System.EventHandler(this.BtnOpenExisting_Click);
 			// 
-			// PackageControlSplashPanel
+			// PackageCreatorSplashPanel
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.Controls.Add(this.tableLayoutPanel1);
-			this.Name = "PackageControlSplashPanel";
+			this.Name = "PackageCreatorSplashPanel";
 			this.Size = new System.Drawing.Size(936, 652);
 			this.tableLayoutPanel1.ResumeLayout(false);
 			this.ResumeLayout(false);

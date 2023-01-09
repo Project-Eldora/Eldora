@@ -1,68 +1,84 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Xml.Serialization;
 
 namespace Eldora.App.Packaging;
 
 [XmlRoot("Package")]
-public class PackageMetadataModel
+public class PackageMetadataModel : INotifyPropertyChanged
 {
+	#region PropertyChanged
+	public event PropertyChangedEventHandler? PropertyChanged;
+	protected virtual void OnPropertyChanged(PropertyChangedEventArgs e) => PropertyChanged?.Invoke(this, e);
+
+	protected void SetField<T>(ref T field, T newValue, [CallerMemberName] string? propertyName = null)
+	{
+		if (EqualityComparer<T>.Default.Equals(field, newValue)) return;
+
+		field = newValue;
+		OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
+	}
+	#endregion
+
 	private Version _version = new(0, 1);
-	private string _versionStr = "0.1";
+	private string _identifier = "";
+	private string _title = "";
+	private List<string> _authors = new();
+	private string _license = "";
+	private string _licenseUrl = "";
+	private string _icon = "";
+	private string _projectReference = "";
+	private string _description = "";
+	private string _copyright = "";
+	private List<string> _tags = new();
+	private PackageMetadataRepositoryModel _repository = new();
+	private List<PackageMetadataDependencyModel> _dependencies = new();
 
-	public string Identifier { get; set; } = "";
-
+	public string Identifier { get => _identifier; set => SetField(ref _identifier, value); }
 	[XmlElement("Version")]
 	public string VersionString
 	{
 		get
 		{
-			return _versionStr;
+			return _version.ToString();
 		}
 		set
 		{
 			if (!Version.TryParse(value, out var result)) return;
-			_versionStr = value;
-			_version = result;
+			SetField(ref _version, result);
 		}
 	}
 
 	[XmlIgnore]
-	public Version Version
-	{
-		get => _version;
-		set
-		{
-			_version = value;
-			_versionStr = _version.ToString();
-		}
-	}
+	public Version Version { get => _version; set => SetField(ref _version, value); }
 
-	public string Title { get; set; } = "";
+	public string Title { get => _title; set => SetField(ref _title, value); }
 
 	[XmlArray("Authors")]
 	[XmlArrayItem("Author")]
-	public List<string> Authors { get; set; } = new();
+	public List<string> Authors { get => _authors; set => SetField(ref _authors, value); }
 
-	public string License { get; set; } = "";
-	public string LicenseUrl { get; set; } = "";
-	public string Icon { get; set; } = "";
-	public string ProjectReference { get; set; } = "";
-	public string Description { get; set; } = "";
-	public string Copyright { get; set; } = "";
+	public string License { get => _license; set => SetField(ref _license, value); }
+
+	public string LicenseUrl { get => _licenseUrl; set => SetField(ref _licenseUrl, value); }
+
+	public string Icon { get => _icon; set => SetField(ref _icon, value); }
+
+	public string ProjectReference { get => _projectReference; set => SetField(ref _projectReference, value); }
+
+	public string Description { get => _description; set => SetField(ref _description, value); }
+
+	public string Copyright { get => _copyright; set => SetField(ref _copyright, value); }
 
 	[XmlArray("Tags")]
 	[XmlArrayItem("Tag")]
-	public List<string> Tags { get; set; } = new();
+	public List<string> Tags { get => _tags; set => SetField(ref _tags, value); }
 
-	public PackageMetadataRepositoryModel Repository { get; set; } = new();
+	public PackageMetadataRepositoryModel Repository { get => _repository; set => SetField(ref _repository, value); }
 
 	[XmlArray("Dependencies")]
 	[XmlArrayItem("Dependency")]
-	public List<PackageMetadataDependencyModel> Dependencies { get; set; } = new();
+	public List<PackageMetadataDependencyModel> Dependencies { get => _dependencies; set => SetField(ref _dependencies, value); }
 
 }
 

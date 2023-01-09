@@ -26,6 +26,8 @@ public class PackageProject
 	private readonly string _projectPath;
 	private readonly PackageProjectMetaModel _projectMetadata;
 
+	public PackageProjectMetaModel ProjectMetadata => _projectMetadata;
+
 	public PackageProject(string projectPath, PackageProjectMetaModel metadata)
 	{
 		_projectPath = projectPath;
@@ -304,14 +306,9 @@ public class PackageProject
 	/// <param name="folderPath"></param>
 	/// <param name="projectName"></param>
 	/// <returns></returns>
-	public static PackageProject? Create(string folderPath, string projectName)
+	public static PackageProject Create(string folderPath, string projectName)
 	{
-		var completeProjectPath = Path.Combine(folderPath, projectName);
-		if (Directory.Exists(completeProjectPath))
-		{
-			MessageBox.Show($"The path \"{completeProjectPath}\" already exists.", "Warn", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-			return null;
-		}
+		var completeProjectPath = FileExtensions.NextAvailableDirectoryName(Path.Combine(folderPath, projectName));
 
 		// Creates project path
 		Directory.CreateDirectory(completeProjectPath);

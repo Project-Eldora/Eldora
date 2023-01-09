@@ -90,7 +90,7 @@ partial class StringInputDialog
 			this.txbInput.PlaceholderText = "Input";
 			this.txbInput.Size = new System.Drawing.Size(333, 23);
 			this.txbInput.TabIndex = 0;
-			this.txbInput.KeyUp += new System.Windows.Forms.KeyEventHandler(this.txbInput_KeyUp);
+			this.txbInput.KeyUp += new System.Windows.Forms.KeyEventHandler(this.TxbInput_KeyUp);
 			// 
 			// flowLayoutPanel1
 			// 

@@ -45,10 +45,16 @@ public partial class StringInputDialog : Form
 		return dialogResult;
 	}
 
-	private void txbInput_KeyUp(object sender, KeyEventArgs e)
+	private void TxbInput_KeyUp(object sender, KeyEventArgs e)
 	{
-		if (e.KeyCode != Keys.Return) return;
-		DialogResult = DialogResult.OK;
+		if (e.KeyCode == Keys.Escape)
+		{
+			DialogResult = DialogResult.Cancel;
+		}
+		else if (e.KeyCode == Keys.Return)
+		{
+			DialogResult = DialogResult.OK;
+		}
 		Close();
 	}
 }

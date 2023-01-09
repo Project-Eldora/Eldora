@@ -20,9 +20,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Eldora.ExtensionApi\Eldora.Packaging.API.csproj" />
 		<ProjectReference Include="..\Eldora.Extensions\Eldora.Extensions.csproj" />
 		<ProjectReference Include="..\Eldora.InputBoxes\Eldora.InputBoxes.csproj" />
+		<ProjectReference Include="..\Eldora.Packaging.API\Eldora.Packaging.API.csproj" />
 		<ProjectReference Include="..\Eldora.Temporary\Eldora.Temporary.csproj" />
 		<ProjectReference Include="..\Eldora.UI.Components\Eldora.UI.Components.csproj" />
 	</ItemGroup>
