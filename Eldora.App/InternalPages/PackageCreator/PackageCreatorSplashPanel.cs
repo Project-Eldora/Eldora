@@ -32,7 +32,7 @@ public partial class PackageCreatorSplashPanel : UserControl
 
 	private void BtnCreateNew_Click(object sender, EventArgs e)
 	{
-		if (StringInputDialog.Show("Project Name", "Enter a name for a new Package Project:", out var name, ValidateInput, "Text must not be empty") == DialogResult.OK)
+		if (StringInputDialog.Show("Project Name", "Enter a name for a new Package Project:", out var name, validateInput: ValidateInput, validationText: "Text must not be empty") == DialogResult.OK)
 		{
 			CreateButtonPressed?.Invoke(this, name);
 		}
@@ -45,7 +45,7 @@ public partial class PackageCreatorSplashPanel : UserControl
 
 	private void BtnOpenExisting_Click(object sender, EventArgs e)
 	{
-		if(_openFileDialog.ShowDialog(this) != DialogResult.OK) { return; }
+		if (_openFileDialog.ShowDialog(this) != DialogResult.OK) { return; }
 		OpenButtonPressed?.Invoke(this, _openFileDialog.FileName);
 	}
 }

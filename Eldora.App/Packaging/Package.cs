@@ -16,6 +16,11 @@ using Microsoft.VisualBasic.Logging;
 
 namespace Eldora.Packaging;
 
+public class PackageProjectEventArgs : EventArgs
+{
+
+}
+
 public class PackageProject
 {
 	public const string PackageExtension = "eldpkg";
@@ -27,6 +32,8 @@ public class PackageProject
 	private readonly PackageProjectMetaModel _projectMetadata;
 
 	public PackageProjectMetaModel ProjectMetadata => _projectMetadata;
+
+	public event EventHandler<PackageProjectEventArgs>? ProjectFilesChanged;
 
 	public PackageProject(string projectPath, PackageProjectMetaModel metadata)
 	{
@@ -48,11 +55,24 @@ public class PackageProject
 			var filePath = ConvertProjectPathToFullPath(f.FileName);
 			if (File.Exists(filePath)) return;
 
-			Log.Info("Project File {file} does not exist. Removing it from the file.", f.FileName);
+			Log.Info("Project Library File {file} does not exist. Removing it from the file.", f.FileName);
 			missing.Add(f);
 		});
 
 		missing.ForEach(f => _projectMetadata.LibraryFiles.Remove(f));
+		missing.Clear();
+
+		_projectMetadata.ContentFiles.ForEach(f =>
+		{
+			var filePath = ConvertProjectPathToFullPath(f.FileName);
+			if (File.Exists(filePath)) return;
+
+			Log.Info("Project Content File {file} does not exist. Removing it from the file.", f.FileName);
+			missing.Add(f);
+		});
+
+		missing.ForEach(f => _projectMetadata.ContentFiles.Remove(f));
+
 		SaveProjectFile();
 
 		var bundleFolder = Path.Combine(_projectPath, _projectMetadata.OutputFolder);
@@ -89,6 +109,8 @@ public class PackageProject
 	/// <param name="fileName"></param>
 	public void RemoveFile(string fileName, bool isLibraryFile)
 	{
+		if (fileName.EndsWith("project.eldprj")) return;
+
 		var files = isLibraryFile switch
 		{
 			true => _projectMetadata.LibraryFiles,
@@ -99,6 +121,7 @@ public class PackageProject
 		if (toRemove == default) return;
 
 		files.Remove(toRemove);
+		OnProjectFilesChanged();
 
 		SaveProjectFile();
 	}
@@ -109,6 +132,8 @@ public class PackageProject
 	/// <param name="fileName"></param>
 	public void CreateNew(string fileName, bool isLibraryFile)
 	{
+		if (fileName.EndsWith("project.eldprj")) return;
+
 		var fullLocalPath = ConvertProjectPathToFullPath(fileName);
 
 		var files = isLibraryFile switch
@@ -132,6 +157,54 @@ public class PackageProject
 			FileName = fileName
 		});
 
+		OnProjectFilesChanged();
+
+		SaveProjectFile();
+	}
+
+	/// <summary>
+	/// Moves a file from one path to another
+	/// </summary>
+	/// <param name="fileName"></param>
+	/// <param name="newName"></param>
+	/// <param name="isLibraryFile"></param>
+	public void MoveFile(string fileName, string newName, bool isLibraryFile)
+	{
+		if (fileName.EndsWith("project.eldprj")) return;
+
+		var fullOldLocalPath = ConvertProjectPathToFullPath(fileName);
+		var fullNewLocalPath = ConvertProjectPathToFullPath(newName);
+
+		var files = isLibraryFile switch
+		{
+			true => _projectMetadata.LibraryFiles,
+			false => _projectMetadata.ContentFiles
+		};
+
+		if (!File.Exists(fullOldLocalPath) || !files.Any(f => f.FileName == fileName))
+		{
+			Log.Info("File {filePath} does not exist. SKIPPING", fullOldLocalPath);
+			return;
+		}
+
+		if (File.Exists(fullNewLocalPath) || files.Any(f => f.FileName == newName))
+		{
+			Log.Info("File {filePath} does already exist. SKIPPING", fullNewLocalPath);
+			return;
+		}
+
+		Directory.CreateDirectory(Path.GetDirectoryName(fullNewLocalPath)!);
+		File.Move(fullOldLocalPath, fullNewLocalPath);
+
+		Log.Info("Moving File {oldPath} to {newPath}", fullOldLocalPath, fullNewLocalPath);
+
+		files.Remove(files.FirstOrDefault(f => f.FileName == fileName)!);
+		files.Add(new PackageProjectFileModel
+		{
+			FileName = newName
+		});
+
+		OnProjectFilesChanged();
 		SaveProjectFile();
 	}
 
@@ -141,6 +214,8 @@ public class PackageProject
 	/// <param name="filePath"></param>
 	public void AddFile(string filePath, bool isLibraryFile = false)
 	{
+		if (filePath.EndsWith("project.eldprj")) return;
+
 		var localPath = ConvertFullPathToProjectPath(filePath);
 		var fullLocalPath = ConvertProjectPathToFullPath(localPath);
 
@@ -152,7 +227,7 @@ public class PackageProject
 
 		if (!File.Exists(fullLocalPath))
 		{
-			Log.Info("File {filePath} does not exist. COPYING", fullLocalPath);
+			Log.Info("File {filePath} does not exist in project path. COPYING", fullLocalPath);
 			File.Copy(filePath, fullLocalPath);
 		}
 
@@ -168,9 +243,16 @@ public class PackageProject
 			FileName = localPath
 		});
 
+		OnProjectFilesChanged();
+
 		SaveProjectFile();
 	}
 
+
+	private void OnProjectFilesChanged()
+	{
+		ProjectFilesChanged?.Invoke(this, new PackageProjectEventArgs());
+	}
 	/// <summary>
 	/// Saves the project file
 	/// </summary>
@@ -193,11 +275,11 @@ public class PackageProject
 	/// Bundles the project to a package
 	/// </summary>
 	/// <param name="path"></param>
-	public void Bundle()
+	public void Bundle(out string bundleName)
 	{
 		CheckProjectFiles();
 
-		var bundleName = $"{_projectMetadata.PackageMetadata.Identifier}.{_projectMetadata.PackageMetadata.Version}.{PackageExtension}";
+		bundleName = $"{_projectMetadata.PackageMetadata.Identifier}-{_projectMetadata.PackageMetadata.Version}.{PackageExtension}";
 		var bundlePath = Path.Combine(_projectPath, _projectMetadata.OutputFolder, bundleName);
 
 		Log.Info("---------------- Beginning bundeling of package {name} ----------------", bundleName);
@@ -314,6 +396,11 @@ public class PackageProject
 		}
 
 		return new PackageProject(completeProjectPath, metadata);
+	}
+
+	public string GetOuputFolder()
+	{
+		return ConvertProjectPathToFullPath(_projectMetadata.OutputFolder);
 	}
 }
 

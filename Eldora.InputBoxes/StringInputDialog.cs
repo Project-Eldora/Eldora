@@ -17,13 +17,16 @@ public partial class StringInputDialog : Form
 		InitializeComponent();
 	}
 
-	public static DialogResult Show(string title, string prompt, out string result, Func<string, bool>? validateInput = null, string validationText = "")
+	public static DialogResult Show(string title, string prompt, out string result, string defaultInput = "", Func<string, bool>? validateInput = null, string validationText = "")
 	{
 		var dialog = new StringInputDialog
 		{
 			Text = title,
 		};
 		dialog.lblQuestion.Text = prompt;
+		dialog.txbInput.Text = defaultInput;
+		dialog.txbInput.Focus();
+		dialog.txbInput.SelectAll();
 
 		DialogResult dialogResult;
 

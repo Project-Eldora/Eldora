@@ -20,7 +20,7 @@ public class PackageMetadataModel : INotifyPropertyChanged
 	}
 	#endregion
 
-	private Version _version = new(0, 1);
+	private Version _version = new(0, 0, 1);
 	private string _identifier = "";
 	private string _title = "";
 	private List<string> _authors = new();

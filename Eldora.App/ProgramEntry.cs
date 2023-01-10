@@ -19,12 +19,7 @@ internal static class ProgramEntry
 		EldoraApp.Startup();
 
 		ApplicationConfiguration.Initialize();
-		//Application.Run(new MainWindow());
-
-		var project = PackageProject.Open("C:\\Users\\Ra6\\AppData\\Roaming\\Eldora\\PackageProjects\\Example Project 2");
-		project?.CreateNew("bin/test.txt", false);
-		project?.CreateNew("lib/lib2/test.dll", true);
-		project?.Bundle();
+		Application.Run(new MainWindow());
 
 		EldoraApp.Shutdown();
 	}
