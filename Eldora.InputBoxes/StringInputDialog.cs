@@ -17,7 +17,7 @@ public partial class StringInputDialog : Form
 		InitializeComponent();
 	}
 
-	public static DialogResult Show(string title, string prompt, out string result, Func<string, bool> validateInput, string validationText)
+	public static DialogResult Show(string title, string prompt, out string result, Func<string, bool>? validateInput = null, string validationText = "")
 	{
 		var dialog = new StringInputDialog
 		{
@@ -31,6 +31,7 @@ public partial class StringInputDialog : Form
 		{
 			dialogResult = dialog.ShowDialog();
 			if (dialogResult == DialogResult.Cancel) return;
+			if (validateInput == null) return;
 
 			if (!validateInput(dialog.txbInput.Text))
 			{
@@ -50,11 +51,12 @@ public partial class StringInputDialog : Form
 		if (e.KeyCode == Keys.Escape)
 		{
 			DialogResult = DialogResult.Cancel;
+			Close();
 		}
 		else if (e.KeyCode == Keys.Return)
 		{
 			DialogResult = DialogResult.OK;
+			Close();
 		}
-		Close();
 	}
 }

@@ -27,5 +27,6 @@ public partial class PackageCreatorEditorPanel : UserControl
 		_editingProject = project;
 
 		packageCreatorMetaEditorPanel.SetProject(project);
+		packageCreatorContentPanel1.SetProject(project);
 	}
 }

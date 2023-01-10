@@ -89,20 +89,17 @@ public class PackageProject
 	/// <param name="fileName"></param>
 	public void RemoveFile(string fileName, bool isLibraryFile)
 	{
-		if (isLibraryFile)
+		var files = isLibraryFile switch
 		{
-			var toRemove = _projectMetadata.LibraryFiles.FirstOrDefault(p => p.FileName == fileName);
-			if (toRemove == default) return;
+			true => _projectMetadata.LibraryFiles,
+			false => _projectMetadata.ContentFiles
+		};
 
-			_projectMetadata.LibraryFiles.Remove(toRemove);
-		}
-		else
-		{
-			var toRemove = _projectMetadata.AdditionalFiles.FirstOrDefault(p => p.FileName == fileName);
-			if (toRemove == default) return;
+		var toRemove = files.FirstOrDefault(p => p.FileName == fileName);
+		if (toRemove == default) return;
 
-			_projectMetadata.AdditionalFiles.Remove(toRemove);
-		}
+		files.Remove(toRemove);
+
 		SaveProjectFile();
 	}
 
@@ -114,38 +111,26 @@ public class PackageProject
 	{
 		var fullLocalPath = ConvertProjectPathToFullPath(fileName);
 
-		if (isLibraryFile)
+		var files = isLibraryFile switch
 		{
-			if (File.Exists(fullLocalPath) || _projectMetadata.LibraryFiles.Any(f => f.FileName == fileName))
-			{
-				Log.Info("File {filePath} does already exist. SKIPPING", fullLocalPath);
-				return;
-			}
+			true => _projectMetadata.LibraryFiles,
+			false => _projectMetadata.ContentFiles
+		};
 
-			Log.Info("Creating file {filePath}", fullLocalPath);
-			File.Create(fullLocalPath);
-
-			_projectMetadata.LibraryFiles.Add(new PackageProjectFileModel
-			{
-				FileName = fileName
-			});
-		}
-		else
+		if (File.Exists(fullLocalPath) || files.Any(f => f.FileName == fileName))
 		{
-			if (File.Exists(fullLocalPath) || _projectMetadata.AdditionalFiles.Any(f => f.FileName == fileName))
-			{
-				Log.Info("File {filePath} does already exist. SKIPPING", fullLocalPath);
-				return;
-			}
-
-			Log.Info("Creating file {filePath}", fullLocalPath);
-			File.Create(fullLocalPath);
-
-			_projectMetadata.AdditionalFiles.Add(new PackageProjectFileModel
-			{
-				FileName = fileName
-			});
+			Log.Info("File {filePath} does already exist. SKIPPING", fullLocalPath);
+			return;
 		}
+
+		Log.Info("Creating file {filePath}", fullLocalPath);
+		Directory.CreateDirectory(Path.GetDirectoryName(fullLocalPath)!);
+		using var fs = File.Create(fullLocalPath);
+
+		files.Add(new PackageProjectFileModel
+		{
+			FileName = fileName
+		});
 
 		SaveProjectFile();
 	}
@@ -171,24 +156,17 @@ public class PackageProject
 			File.Copy(filePath, fullLocalPath);
 		}
 
-		if (isLibraryFile)
+		var files = isLibraryFile switch
 		{
-			if (_projectMetadata.LibraryFiles.Any(f => f.FileName == localPath)) return;
+			true => _projectMetadata.LibraryFiles,
+			false => _projectMetadata.ContentFiles
+		};
 
-			_projectMetadata.LibraryFiles.Add(new PackageProjectFileModel
-			{
-				FileName = localPath
-			});
-		}
-		else
+		if (files.Any(f => f.FileName == localPath)) return;
+		files.Add(new PackageProjectFileModel
 		{
-			if (_projectMetadata.AdditionalFiles.Any(f => f.FileName == localPath)) return;
-
-			_projectMetadata.AdditionalFiles.Add(new PackageProjectFileModel
-			{
-				FileName = localPath
-			});
-		}
+			FileName = localPath
+		});
 
 		SaveProjectFile();
 	}
@@ -210,6 +188,7 @@ public class PackageProject
 		}
 	}
 
+	#region Bundling
 	/// <summary>
 	/// Bundles the project to a package
 	/// </summary>
@@ -227,11 +206,10 @@ public class PackageProject
 		{
 			using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
 			{
-				AddMetafile(archive);
+				BundleMetadataFile(archive);
 
-				_projectMetadata.LibraryFiles.ForEach(f => AddProjectFile(archive, f, true));
-
-				_projectMetadata.AdditionalFiles.ForEach(f => AddProjectFile(archive, f, false));
+				_projectMetadata.LibraryFiles.ForEach(f => BundleProjectFile(archive, f, true));
+				_projectMetadata.ContentFiles.ForEach(f => BundleProjectFile(archive, f, false));
 			}
 
 			if (File.Exists(bundlePath)) File.Delete(bundlePath);
@@ -243,11 +221,13 @@ public class PackageProject
 		Log.Info("---------------- Finished bundeling of package {name} ----------------", bundleName);
 	}
 
-	private void AddProjectFile(ZipArchive archive, PackageProjectFileModel fileModel, bool isLibraryFile)
+	private void BundleProjectFile(ZipArchive archive, PackageProjectFileModel fileModel, bool isLibraryFile)
 	{
 		Log.Info("Adding file {fileModel} to Bundle", fileModel.FileName);
 
-		var archivePath = Path.Combine(fileModel.FileName);
+		var fileModelName = fileModel.FileName.Replace("\\", "/");
+
+		var archivePath = fileModelName[(fileModelName.LastIndexOf("/") + 1)..];
 		if (isLibraryFile)
 		{
 			archivePath = Path.Combine("lib", archivePath);
@@ -259,7 +239,7 @@ public class PackageProject
 		archive.CreateEntryFromFile(filePath, archivePath);
 	}
 
-	private void AddMetafile(ZipArchive archive)
+	private void BundleMetadataFile(ZipArchive archive)
 	{
 		Log.Info("Adding Meta file to Bundle");
 		var metaFile = archive.CreateEntry($"{_projectMetadata.PackageMetadata.Identifier}.{PackageMetadataExtension}");
@@ -268,6 +248,7 @@ public class PackageProject
 		var serializer = new XmlSerializer(typeof(PackageMetadataModel));
 		serializer.Serialize(stream, _projectMetadata.PackageMetadata);
 	}
+	#endregion
 
 	/// <summary>
 	/// Returns null if the directory does not exist, the meta filePath does not exist or there is a problem deserializing the meta filePath
@@ -320,7 +301,7 @@ public class PackageProject
 		var metadata = new PackageProjectMetaModel
 		{
 			ProjectName = projectName,
-			PackageMetadata= pkg,
+			PackageMetadata = pkg,
 		};
 
 		// Creates the output folder
@@ -346,7 +327,7 @@ public class PackageProjectMetaModel
 	public List<PackageProjectFileModel> LibraryFiles { get; set; } = new();
 
 	[XmlArrayItem("File")]
-	public List<PackageProjectFileModel> AdditionalFiles { get; set; } = new();
+	public List<PackageProjectFileModel> ContentFiles { get; set; } = new();
 
 	public PackageMetadataModel PackageMetadata { get; set; } = new();
 }

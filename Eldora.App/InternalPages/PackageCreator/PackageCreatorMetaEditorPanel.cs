@@ -177,7 +177,7 @@ public partial class PackageCreatorMetaEditorPanel : UserControl
 				{
 					var repo = (PackageMetadataRepositoryModel)value;
 
-					valueLabel.Text = $"({repo.Type}) - " + repo.Url;
+					valueLabel.Text = $"[{repo.Type}] " + repo.Url;
 
 					valueControl = new TextBox
 					{
