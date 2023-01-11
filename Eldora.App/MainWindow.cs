@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
+using System.Xml.Linq;
 using Eldora.App.InternalPages.PackageCreator;
 using Eldora.Extensions;
 using Eldora.InputBoxes;
@@ -20,18 +21,83 @@ internal sealed partial class MainWindow : Form
 	//private readonly PackageManager _extensionManagerPanel = new();
 	private readonly PackageCreatorPanel _pkgCreator = new();
 
+	private const string TITLE_PREFIX = "Eldora";
+
+	#region RootNodes
+
+	private readonly TreeNode _newsNode = new("News")
+	{
+		Name = "News",
+	};
+
+	private readonly TreeNode _toolsNode = new("Tools")
+	{
+		Name = "Tools",
+	};
+
+	private readonly TreeNode _settingsNode = new("Settings")
+	{
+		Name = "Settings",
+	};
+
+	private readonly TreeNode _helpNode = new("Help")
+	{
+		Name = "Help",
+	};
+
+	#endregion
+
+	private readonly List<DockableComponent> _components = new();
+
+	private readonly ContextMenuStrip _navbarContextMenu = new();
+	private readonly ToolStripMenuItem _dockUndockMenuItem = new("Undock");
+
 	public MainWindow()
 	{
 		InitializeComponent();
 
 		showHideNavigationBar.Image = Bitmaps.LoadBitmapFromSvg(Properties.Resources.menu);
+
+		_dockUndockMenuItem.Click += DockUndockMenuItem_Click;
+		_navbarContextMenu.Items.Add(_dockUndockMenuItem);
+		_navbarContextMenu.Opening += NavbarContextMenu_Opening;
+		sidebarTreeView.ContextMenuStrip = _navbarContextMenu;
+	}
+
+	private void DockUndockMenuItem_Click(object? sender, EventArgs e)
+	{
+		if (sidebarTreeView.SelectedNode == null) return;
+
+		var path = sidebarTreeView.SelectedNode.FullPath;
+
+		var component = _components.FirstOrDefault(p => p.NavbarPath == path);
+		if (component == default) { return; }
+
+		component.Undock();
+		sidebarTreeView.SelectedNode = sidebarTreeView.SelectedNode.NextVisibleNode;
+		Text = $"{TITLE_PREFIX}";
+	}
+
+	private void NavbarContextMenu_Opening(object? sender, System.ComponentModel.CancelEventArgs e)
+	{
+		if (sidebarTreeView.SelectedNode == null)
+		{
+			_dockUndockMenuItem.Enabled = false;
+			return;
+		}
+
+		_dockUndockMenuItem.Enabled = true;
+
+		var path = sidebarTreeView.SelectedNode.FullPath;
+
+		var component = _components.FirstOrDefault(p => p.NavbarPath == path);
+		if (component == default) return;
+		if (component.IsUndocked()) return;
 	}
 
 	private void AddInternalPages()
 	{
-		//AddInternalPage(_newsNode, "Changelog", _changelogPane);
 		AddInternalPage(null, "Package Creator", _pkgCreator);
-		//AddInternalPage(sidebarTreeView.GetNodeByFullPath("Extension"), "Extension Creator", _extensionCreatorPanel);
 	}
 
 	private void AddInternalPage(TreeNode? node, string name, Control control)
@@ -45,26 +111,13 @@ internal sealed partial class MainWindow : Form
 		if (node == null) sidebarTreeView.Nodes.Add(pageNode);
 		else node.Nodes.Add(pageNode);
 
-		MapControlToNodePath(pageNode.FullPath, control);
-	}
-
-	/// <summary>
-	/// Adds all pages from all plugins
-	/// </summary>
-	private void AddPluginPages()
-	{
-
-		//foreach (var loaded in PluginHandler.LoadedPlugins)
-		//{
-		//	AddPagesForPlugin(loaded);
-		//}
-
+		MapControlToNodePath(pageNode.FullPath, name, control);
 	}
 
 	/// <summary>
 	/// Adds all pages from a loaded plugin
 	/// </summary>
-	/// <param name="loaded"></param>
+	/// <param title="loaded"></param>
 	//private void AddPagesForPlugin(PluginContainer loaded)
 	//{
 	//	var toAdd = new List<(ToolsPageAttribute, Control control)>();
@@ -82,7 +135,7 @@ internal sealed partial class MainWindow : Form
 	/// <summary>
 	/// Adds a page to the nav bar and maps its control
 	/// </summary>
-	/// <param name="mappedPage"></param>
+	/// <param title="mappedPage"></param>
 	//private void AddPagePath((PackagePageAttribute attribute, Control page) mappedPage)
 	//{
 	//	var path = mappedPage.attribute.PagePathWithTitle;
@@ -110,35 +163,6 @@ internal sealed partial class MainWindow : Form
 	//	MapControlToNodePath(_toolsNode.Name + sidebarTreeView.PathSeparator + string.Join(sidebarTreeView.PathSeparator, mappedPage.attribute.PagePathWithTitle), mappedPage.page);
 	//}
 
-	#region RootNodes
-
-	private readonly TreeNode _newsNode = new("News")
-	{
-		Name = "News",
-	};
-
-	private readonly TreeNode _toolsNode = new("Tools")
-	{
-		Name = "Tools",
-	};
-
-	private readonly TreeNode _settingsNode = new("Settings")
-	{
-		Name = "Settings",
-	};
-
-	private readonly TreeNode _helpNode = new("Help")
-	{
-		Name = "Help",
-	};
-
-	#endregion
-
-	/// <summary>
-	/// The mapping for sidebar nodes and their corresponding controls
-	/// </summary>
-	private readonly Dictionary<string, Control> _nodeMapping = new();
-
 	/// <summary>
 	/// Adds the default nodes to the tree view
 	/// </summary>
@@ -155,61 +179,43 @@ internal sealed partial class MainWindow : Form
 
 		sidebarTreeView.SetDoubleBuffered();
 
-		sidebarTreeView.AfterSelect += (_, _) =>
+		sidebarTreeView.NodeMouseClick += (_, args) =>
 		{
-			var path = sidebarTreeView.SelectedNode.FullPath;
+			if (args.Node == null) return;
+			if (args.Button == MouseButtons.Right) return;
 
-			if (path.Contains(sidebarTreeView.PathSeparator))
-			{
-				Log.Info("Path({path}) containts {seperator} ", path, sidebarTreeView.PathSeparator);
-			}
+			var path = args.Node.FullPath;
 
-			if (!_nodeMapping.ContainsKey(path)) return;
+			var component = _components.FirstOrDefault(p => p.NavbarPath == path);
+			if (component == default) return;
+			if (component.IsUndocked()) return;
 
 			containerWrapper.Panel2.Controls.Clear();
-			containerWrapper.Panel2.Controls.Add(_nodeMapping[path]);
+			containerWrapper.Panel2.Controls.Add(component.Control);
+
+			Text = $"{TITLE_PREFIX} - {component.Title}";
 
 			Log.Info("Opening {path}", path);
 		};
 	}
 
-	private void MapControlToNodePath(string path, Control control)
+	private void MapControlToNodePath(string path, string title, Control control)
 	{
+		if (_components.Any(c => c.NavbarPath == path)) return;
 		Log.Info("Adding mapping for {map}", path);
+
 		control.Dock = DockStyle.Fill;
 
-		_nodeMapping[path] = control;
+		var comp = new DockableComponent(path, title, control);
+		_components.Add(comp);
 	}
 
 	private void MainWindow_Load(object sender, EventArgs e)
 	{
 		AddRootNodes();
 		AddInternalPages();
-		AddPluginPages();
-
-		//PluginHandler.PluginsGotChanged += (_, args) =>
-		//{
-		//	if (args.Type != PluginChangedEventArgs.PluginChangedEventType.Added) return;
-		//	AddPagesForPlugin(args.PluginContainer);
-		//};
 
 		sidebarTreeView.ExpandAll();
-	}
-
-	private static Bitmap LoadBitmapFromSvg(string resourcePath, int width = 24, int height = 24)
-	{
-		var assembly = typeof(MainWindow).Assembly;
-		var resourceName = assembly.GetManifestResourceNames().FirstOrDefault(x => x.Contains(resourcePath));
-		// if resourceName is null return empty Bitmap
-		if (resourceName == null) return new Bitmap(1, 1);
-
-		using var stream = assembly.GetManifestResourceStream(resourceName);
-		// if stream is null return empty Bitmap
-		if (stream == null) return new Bitmap(1, 1);
-
-		var svgDocument = SvgDocument.Open<SvgDocument>(stream);
-		var bitmap = svgDocument.Draw(width, height);
-		return bitmap;
 	}
 
 	private void MainWindow_Resize(object sender, EventArgs e)
@@ -219,5 +225,74 @@ internal sealed partial class MainWindow : Form
 	private void ShowHideNavigationBar_Click(object sender, EventArgs e)
 	{
 		containerWrapper.Panel1Collapsed = !containerWrapper.Panel1Collapsed;
+	}
+
+	private class DockableComponent
+	{
+		private Form? _componentForm;
+
+		public Control Control { get; }
+		public string NavbarPath { get; }
+
+		public string Title { get; set; }
+
+		public DockableComponent(string navbarPath, string title, Control control)
+		{
+			NavbarPath = navbarPath;
+			Title = $"{TITLE_PREFIX} - {title}";
+			Control = control;
+		}
+
+		public void Undock()
+		{
+			CreateOrShow();
+			_componentForm!.Controls.Add(Control);
+		}
+
+		private void CreateOrShow()
+		{
+			// if the form is not closed, show it
+			if (_componentForm == null)
+			{
+				_componentForm = new Form
+				{
+					Text = Title
+				};
+
+				_componentForm.FormClosing += (_, _) =>
+				{
+					_componentForm.Controls.Clear();
+				}; ;
+
+				// attach the handler
+				_componentForm.FormClosed += ChildFormClosed;
+			}
+
+			// show it
+			_componentForm.Show();
+		}
+
+		// when the form closes, detach the handler and clear the field
+		private void ChildFormClosed(object? sender, FormClosedEventArgs args)
+		{
+			// detach the handler
+			_componentForm!.FormClosed -= ChildFormClosed;
+
+			// let GC collect it (and this way we can tell if it's closed)
+			_componentForm = null;
+		}
+
+		public bool IsUndocked()
+		{
+			var fc = Application.OpenForms;
+			foreach (Form frm in fc)
+			{
+				if (frm.Text == Title)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 }
