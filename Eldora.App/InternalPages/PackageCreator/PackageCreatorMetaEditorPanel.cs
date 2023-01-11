@@ -51,9 +51,6 @@ public partial class PackageCreatorMetaEditorPanel : UserControl
 		{
 			AddProperty(property);
 		}
-
-		tlpMetadata.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-		tlpMetadata.RowCount++;
 	}
 
 	private void AddProperty(PropertyInfo property)

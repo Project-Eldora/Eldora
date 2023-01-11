@@ -300,6 +300,7 @@ public class PackageProject
 			memoryStream.Seek(0, SeekOrigin.Begin);
 			memoryStream.CopyTo(fileStream);
 		}
+
 		Log.Info("---------------- Finished bundeling of package {name} ----------------", bundleName);
 	}
 

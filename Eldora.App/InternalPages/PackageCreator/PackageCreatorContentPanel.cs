@@ -244,20 +244,4 @@ public partial class PackageCreatorContentPanel : UserControl
 		_tsmiRenameItem.Enabled = listView1.SelectedItems.Count != 0;
 		_tsmiDeleteItem.Enabled = listView1.SelectedItems.Count != 0;
 	}
-
-	private void MsbOpenTargetFolder_Click(object sender, EventArgs e)
-	{
-		if (_editingProject == null) return;
-		ExplorerExtensions.OpenExplorer(_editingProject.GetOuputFolder());
-	}
-
-	private void MsbBundle_Click(object sender, EventArgs e)
-	{
-		if(_editingProject == null) return;
-		_editingProject.Bundle(out var bundleName);
-		MessageBoxes.RequestYesNoConfirmation("Finished bundling. Open output directory?", "Info", MessageBoxIcon.Question, () =>
-		{
-			ExplorerExtensions.OpenExplorerAndSelectItem(_editingProject.GetOuputFolder(), bundleName);
-		});
-	}
 }

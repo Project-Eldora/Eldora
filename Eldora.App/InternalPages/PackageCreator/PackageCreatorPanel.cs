@@ -31,9 +31,15 @@ public partial class PackageCreatorPanel : UserControl
 		{
 			Tag = "editor"
 		};
+		_editorPanel.ClosingRequested += EditorPanel_ClosingRequested;
 
 		esp.AppendControl(_splashPanel);
 		esp.AppendControl(_editorPanel);
+	}
+
+	private void EditorPanel_ClosingRequested(object? sender, EventArgs e)
+	{
+		esp.ShowControl("splash");
 	}
 
 	private void SplashPanel_OpenButtonPressed(object? sender, string e)

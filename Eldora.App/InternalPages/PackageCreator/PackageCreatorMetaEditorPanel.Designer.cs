@@ -40,7 +40,7 @@ partial class PackageCreatorMetaEditorPanel
 			this.tlpMetadata.ColumnCount = 2;
 			this.tlpMetadata.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this.tlpMetadata.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tlpMetadata.Dock = System.Windows.Forms.DockStyle.Fill;
+			this.tlpMetadata.Dock = System.Windows.Forms.DockStyle.Top;
 			this.tlpMetadata.Location = new System.Drawing.Point(0, 24);
 			this.tlpMetadata.Name = "tlpMetadata";
 			this.tlpMetadata.RowCount = 1;
