@@ -40,7 +40,7 @@ static internal class InternalPaths
 		PackagesPath = $@"{RootPath}\Packages";
 		LanguagePath = $@"{RootPath}\Langs";
 		LogPath = $@"{RootPath}\Logs";
-		SettingsFilePath = $@"{RootPath}\settings.json";
+		SettingsFilePath = $@"{RootPath}\config.xml";
 
 		PackageProjectsPath = $@"{RootPath}\PackageProjects";
 

@@ -10,6 +10,7 @@ using System.Xml.Linq;
 using Eldora.App.InternalPages.PackageCreator;
 using Eldora.Extensions;
 using Eldora.InputBoxes;
+using Eldora.Packaging.API.Attributes;
 using Svg;
 
 namespace Eldora.App;
@@ -115,53 +116,51 @@ internal sealed partial class MainWindow : Form
 	}
 
 	/// <summary>
-	/// Adds all pages from a loaded plugin
-	/// </summary>
-	/// <param title="loaded"></param>
-	//private void AddPagesForPlugin(PluginContainer loaded)
-	//{
-	//	var toAdd = new List<(ToolsPageAttribute, Control control)>();
-	//	foreach (var type in loaded.PluginAssembly.GetExportedTypes())
-	//	{
-	//		if (!Attribute.IsDefined(type, typeof(ToolsPageAttribute))) continue;
-
-	//		var control = (Control) Activator.CreateInstance(type);
-	//		toAdd.Add((type.GetCustomAttribute<ToolsPageAttribute>(), control));
-	//	}
-
-	//	toAdd.ForEach(AddPagePath);
-	//}
-
-	/// <summary>
 	/// Adds a page to the nav bar and maps its control
 	/// </summary>
 	/// <param title="mappedPage"></param>
-	//private void AddPagePath((PackagePageAttribute attribute, Control page) mappedPage)
-	//{
-	//	var path = mappedPage.attribute.PagePathWithTitle;
+	private void AddPluginPage(PackagePageAttribute attribute, Control page)
+	{
+		var path = attribute.PagePathWithTitle;
 
-	//	var lastNode = _toolsNode;
-	//	foreach (var t in path)
-	//	{
-	//		var foundNode = lastNode.Nodes.Cast<TreeNode>().FirstOrDefault(node => node.Name == t);
+		var lastNode = _toolsNode;
+		foreach (var t in path)
+		{
+			var foundNode = lastNode.Nodes.Cast<TreeNode>().FirstOrDefault(node => node.Name == t);
 
-	//		if (foundNode == default)
-	//		{
-	//			var node = new TreeNode
-	//			{
-	//				Name = t,
-	//				Text = t
-	//			};
-	//			lastNode.Nodes.Add(node);
-	//			lastNode = node;
-	//			continue;
-	//		}
+			if (foundNode == default)
+			{
+				var node = new TreeNode
+				{
+					Name = t,
+					Text = t
+				};
+				lastNode.Nodes.Add(node);
+				lastNode = node;
+				continue;
+			}
 
-	//		lastNode = foundNode;
-	//	}
+			lastNode = foundNode;
+		}
 
-	//	MapControlToNodePath(_toolsNode.Name + sidebarTreeView.PathSeparator + string.Join(sidebarTreeView.PathSeparator, mappedPage.attribute.PagePathWithTitle), mappedPage.page);
-	//}
+		MapControlToNodePath(_toolsNode.Name + sidebarTreeView.PathSeparator + string.Join(sidebarTreeView.PathSeparator, attribute.PagePathWithTitle), attribute.PageTitle, page);
+	}
+
+	private void AddPluginPages()
+	{
+		foreach (var pkg in EldoraApp.BundledPackages)
+		{
+			var assembly = pkg.RootAssembly;
+			foreach (var type in assembly.GetTypes())
+			{
+				if (!Attribute.IsDefined(type, typeof(PackagePageAttribute))) continue;
+				if (Attribute.GetCustomAttribute(type, typeof(PackagePageAttribute)) is not PackagePageAttribute attribute) continue;
+				if (Activator.CreateInstance(type) is not Control control) continue;
+
+				AddPluginPage(attribute, control);
+			}
+		}
+	}
 
 	/// <summary>
 	/// Adds the default nodes to the tree view
@@ -214,6 +213,7 @@ internal sealed partial class MainWindow : Form
 	{
 		AddRootNodes();
 		AddInternalPages();
+		AddPluginPages();
 
 		sidebarTreeView.ExpandAll();
 	}

@@ -12,7 +12,7 @@ public delegate void CancelDelegate();
 
 public static class MessageBoxes
 {
-	public static void RequestYesNoConfirmation(string content, string title, MessageBoxIcon icon, ConfirmDelegate? confirmationCallback = null, CancelDelegate? cancelationCallback = null)
+	public static void RequestOkCancelConfirmation(string content, string title, MessageBoxIcon icon, ConfirmDelegate? confirmationCallback = null, CancelDelegate? cancelationCallback = null)
 	{
 		var result = MessageBox.Show(content, title, MessageBoxButtons.OKCancel, icon);
 		if (result != DialogResult.OK)
@@ -24,7 +24,7 @@ public static class MessageBoxes
 		confirmationCallback?.Invoke();
 	}
 
-	public static void RequestOkCancelConfirmation(string content, string title, MessageBoxIcon icon, ConfirmDelegate? confirmationCallback = null, CancelDelegate? cancelationCallback = null)
+	public static void RequestYesNoConfirmation(string content, string title, MessageBoxIcon icon, ConfirmDelegate? confirmationCallback = null, CancelDelegate? cancelationCallback = null)
 	{
 		var result = MessageBox.Show(content, title, MessageBoxButtons.YesNo, icon);
 		if (result != DialogResult.Yes)

@@ -1,7 +1,10 @@
 ﻿using System.Text.Json;
+using System.Xml.Serialization;
+using Eldora.App.Packaging;
 using Eldora.Extensions;
 
 namespace Eldora.App;
+
 internal class EldoraApp
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
@@ -17,36 +20,40 @@ internal class EldoraApp
 		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 	};
 
+	private static ProgramSettingsModel PackageSettings = new();
+	public static readonly List<BundledPackage> BundledPackages = new();
+
 	/// <summary>
 	/// Loads the installed plugins
 	/// </summary>
 	private static void LoadPlugins()
 	{
-		//var pluginFolderContent = Directory.GetFiles(InternalPaths.PackagesPath, "*.zip").ToList();
+		var packagesPath = Directory.GetDirectories(InternalPaths.PackagesPath);
 
-		//var pluginsToDelete = new List<SettingsModel.InstalledPluginModel>();
+		var allowedFolders = new List<string>();
 
-		//foreach (var settingsInstalledPlugin in SettingsModel.InstalledPlugins)
-		//{
-		//	var found = false;
+		foreach (var pkg in PackageSettings.InstalledPackages)
+		{
+			var path = Path.Combine(InternalPaths.PackagesPath, $"{pkg.PackageName}-{pkg.Version}");
+			if (!Directory.Exists(path))
+			{
+				Log.Warn("Could not load package {pkg}", path);
+			}
+			allowedFolders.Add(path);
+		}
 
-		//	foreach (var file in pluginFolderContent)
-		//	{
-		//		if (!File.Exists(file)) continue;
-		//		found = true;
+		foreach (var pkg in allowedFolders)
+		{
+			var package = new BundledPackage(pkg);
+			package.Load();
 
-		//		pluginFolderContent.Remove(file);
-		//		break;
-		//	}
+			BundledPackages.Add(package);
+		}
 
-		//	if (found) continue;
-
-		//	Log.Warn("Plugin {name} with version {version} not found", settingsInstalledPlugin.Name, settingsInstalledPlugin.Version);
-		//	pluginsToDelete.Add(settingsInstalledPlugin);
-		//}
-
-		//SettingsModel.InstalledPlugins = SettingsModel.InstalledPlugins.Except(pluginsToDelete).ToList();
-		//SaveSettings();
+		foreach (var dir in Directory.GetDirectories(InternalPaths.PackagesPath).Where(f => !allowedFolders.Contains(f)))
+		{
+			Directory.Delete(dir, true);
+		}
 	}
 
 	/// <summary>
@@ -54,37 +61,19 @@ internal class EldoraApp
 	/// </summary>
 	private static void LoadSettings()
 	{
-		//try
-		//{
-		//	if (!File.Exists(InternalPaths.SettingsFilePath))
-		//	{
-		//		LoadDefaultSettings();
-		//	}
+		Log.Info("Loading Settings.");
 
-		//	SettingsModel = JsonSerializer.Deserialize<SettingsModel>(File.ReadAllText(InternalPaths.SettingsFilePath), DefaultSerializerOptions);
-		//}
-		//catch (JsonException e)
-		//{
-		//	Log.Error(e);
-		//	LoadDefaultSettings();
-		//}
-	}
+		if (!File.Exists(InternalPaths.SettingsFilePath))
+		{
+			Log.Info(message: "Missing Settings, saving.");
+			SaveSettings();
+		}
 
-	private static void LoadDefaultSettings()
-	{
-		//SettingsModel = new SettingsModel
-		//{
-		//	PluginRepositories =
-		//	{
-		//		new SettingsModel.PluginRepositoryModel
-		//		{
-		//			Name = "Default",
-		//			Url = "https://project-eldora.github.io/EldoraPlugins/plugins.json"
-		//		}
-		//	},
-		//};
-
-		//SaveSettings();
+		var serializer = new XmlSerializer(typeof(ProgramSettingsModel));
+		using (var stream = new FileStream(InternalPaths.SettingsFilePath, FileMode.Open))
+		{
+			PackageSettings = (serializer.Deserialize(stream) as ProgramSettingsModel)!;
+		}
 	}
 
 	/// <summary>
@@ -92,8 +81,13 @@ internal class EldoraApp
 	/// </summary>
 	public static void SaveSettings()
 	{
-		//if (File.Exists(InternalPaths.SettingsFilePath)) File.Delete(InternalPaths.SettingsFilePath);
-		//File.WriteAllText(InternalPaths.SettingsFilePath, JsonSerializer.Serialize(SettingsModel, DefaultSerializerOptions));
+		Log.Info(message: "Saving Settings.");
+
+		var serializer = new XmlSerializer(typeof(ProgramSettingsModel));
+		using (var stream = new FileStream(InternalPaths.SettingsFilePath, FileMode.Create))
+		{
+			serializer.Serialize(stream, PackageSettings);
+		}
 	}
 
 	/// <summary>
