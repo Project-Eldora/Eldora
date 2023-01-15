@@ -132,8 +132,12 @@ public partial class PackageCreatorMetaEditorPanel : UserControl
 						if (e.Value is not List<string> list) return;
 
 						var sb = "";
+
 						list.ForEach(item => sb += item + ", ");
-						e.Value = sb[..^2];
+						if (string.IsNullOrEmpty(sb))
+							e.Value = "";
+						else
+							e.Value = sb[..^2];
 					};
 
 					valueControl = new TextBox
@@ -165,7 +169,10 @@ public partial class PackageCreatorMetaEditorPanel : UserControl
 
 						var sb = "";
 						list.ForEach(item => sb += item + ", ");
-						e.Value = sb[..^2];
+						if (string.IsNullOrEmpty(sb))
+							e.Value = "";
+						else
+							e.Value = sb[..^2];
 					};
 				}
 				break;

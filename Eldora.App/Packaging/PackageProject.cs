@@ -16,6 +16,8 @@ using Microsoft.VisualBasic.Logging;
 
 namespace Eldora.Packaging;
 
+// TODO: Add file linking to reload automatically
+
 public class PackageProjectEventArgs : EventArgs
 {
 

@@ -13,84 +13,122 @@ using Eldora.Packaging.API.Attributes;
 
 namespace Eldora.App.Packaging;
 
-internal class BundledPackage
+internal class BundledPackage : IDisposable
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
 
 	private PackageLoadContext _context;
-	private readonly string _path;
-	private readonly string _libPath;
+	private string _path;
+	private string _libPath;
 
-	private PackageMetadataModel? _packageMetadata;
-	private object _mainInstance;
-
-	public object MainInstance => _mainInstance;
-
+	public object MainInstance { get; private set; }
 	public Assembly RootAssembly { get; private set; }
 	public bool IsValid { get; private set; } = false;
+
+	public PackageMetadataModel? PackageMetadata { get; private set; }
+
 
 	private readonly List<MethodInfo> _onLoadMethod = new();
 	private readonly List<MethodInfo> _onUnloadMethod = new();
 
-	public BundledPackage(string path)
+	public static BundledPackage? FromFolder(string path)
 	{
-		_path = path.Replace("/", "\\");
-		_libPath = Path.Combine(_path, "lib");
+		var result = new BundledPackage
+		{
+			_path = path.Replace("/", "\\")
+		};
+		result._libPath = Path.Combine(result._path, "lib");
 
-		OpenAndExtractPackage();
-	}
-
-	private void OpenAndExtractPackage()
-	{
-		var packageName = Path.GetFileName(_path)!;
+		var packageName = Path.GetFileName(result._path)!;
 		var packageNameWithoutVersion = packageName[..packageName.LastIndexOf("-")];
 
-		var packedPackagePath = Path.Combine(_path, $"{packageName}.{PackageProject.PackageExtension}");
+		var packedPackagePath = Path.Combine(result._path, $"{packageName}.{PackageProject.PackageExtension}");
 
 		if (!File.Exists(packedPackagePath))
 		{
 			Log.Error("Could not validate package {pkg}.", packedPackagePath);
-			return;
+			return null;
 		}
 
-		if (Directory.Exists(_libPath))
+		if (Directory.Exists(result._libPath))
 		{
-			Directory.Delete(_libPath, true);
+			Directory.Delete(result._libPath, true);
 		}
-		Directory.CreateDirectory(_libPath);
+		Directory.CreateDirectory(result._libPath);
 
 		using var packageFile = ZipFile.OpenRead(packedPackagePath);
-		if (packageFile == null) return;
+		if (packageFile == null) return null;
 
 		var metaFileEntry = packageFile.Entries.FirstOrDefault(entry => entry.FullName.Equals($"{packageNameWithoutVersion}.{PackageProject.PackageMetadataExtension}"));
 		if (metaFileEntry == null)
 		{
 			Log.Error("Missing meta file!");
-			return;
+			return null;
 		}
 
 		var serializer = new XmlSerializer(typeof(PackageMetadataModel));
 		using (var stream = metaFileEntry.Open())
 		{
-			_packageMetadata = serializer.Deserialize(stream) as PackageMetadataModel;
+			result.PackageMetadata = serializer.Deserialize(stream) as PackageMetadataModel;
 		}
-		if (_packageMetadata == null) return;
+		if (result.PackageMetadata == null) return null;
 
 		var libfiles = packageFile.Entries.Where(entry => entry.FullName.StartsWith("lib")).ToList();
 		foreach (var libfile in libfiles)
 		{
-			var targetFile = Path.Combine(_path, libfile.FullName);
+			var targetFile = Path.Combine(result._path, libfile.FullName);
 			libfile.ExtractToFile(targetFile);
 		}
 
-		var entryAssemblyPath = Path.Combine(_libPath, $"{_packageMetadata.Identifier}.dll");
+		var entryAssemblyPath = Path.Combine(result._libPath, $"{result.PackageMetadata.Identifier}.dll");
 		if (!File.Exists(entryAssemblyPath))
 		{
 			Log.Error("Missing file {entry}", entryAssemblyPath);
-			return;
+			return null;
 		};
 
-		IsValid = true;
+		result.IsValid = true;
+		return result;
+	}
+
+	public static BundledPackage? FromFile(string filePath)
+	{
+		var packageName = Path.GetFileNameWithoutExtension(filePath)!;
+		var packageNameNoVersion = packageName[..packageName.LastIndexOf("-")];
+
+		using (var packageFile = ZipFile.OpenRead(filePath))
+		{
+			PackageMetadataModel? metadata = null;
+			if (packageFile == null) return null;
+
+			var metaFileEntry = packageFile.Entries.FirstOrDefault(entry => entry.FullName.Equals($"{packageNameNoVersion}.{PackageProject.PackageMetadataExtension}"));
+			if (metaFileEntry == null)
+			{
+				Log.Error("Missing meta file!");
+				return null;
+			}
+
+			var serializer = new XmlSerializer(typeof(PackageMetadataModel));
+			using (var stream = metaFileEntry.Open())
+			{
+				metadata = serializer.Deserialize(stream) as PackageMetadataModel;
+			}
+			if (metadata == null) return null;
+
+			var existing = EldoraApp.LoadedPackages.FirstOrDefault(pkg => pkg.PackageMetadata!.Identifier == metadata.Identifier);
+			if (existing != default)
+			{
+				Log.Warn("Package {pkg} is already installed! Uninstall package first!", existing.PackageMetadata!.Identifier);
+				return null;
+			}
+		}
+
+		var targetFolderPath = Path.Combine(InternalPaths.PackagesPath, $"{packageName}");
+		var targetFilePath = Path.Combine(targetFolderPath, $"{packageName}.{PackageProject.PackageExtension}");
+		Directory.CreateDirectory(targetFolderPath);
+		File.Copy(filePath, targetFilePath);
+
+		return FromFolder(targetFolderPath);
 	}
 
 	/// <summary>
@@ -100,14 +138,14 @@ internal class BundledPackage
 	{
 		if (!IsValid) return;
 
-		var entryAssemblyPath = Path.Combine(_libPath, $"{_packageMetadata!.Identifier}.dll");
+		var entryAssemblyPath = Path.Combine(_libPath, $"{PackageMetadata!.Identifier}.dll");
 		_context = new PackageLoadContext(_libPath);
 		RootAssembly = _context.LoadFromAssemblyPath(entryAssemblyPath);
 
 		foreach (var type in RootAssembly.GetTypes())
 		{
 			if (!Attribute.IsDefined(type, typeof(PackageEntryAttribute))) continue;
-			_mainInstance = Activator.CreateInstance(type)!;
+			MainInstance = Activator.CreateInstance(type)!;
 
 			foreach (var method in type.GetMethods())
 			{
@@ -127,7 +165,7 @@ internal class BundledPackage
 			break;
 		}
 
-		_onLoadMethod.ForEach(info => info.Invoke(_mainInstance, null));
+		_onLoadMethod.ForEach(info => info.Invoke(MainInstance, null));
 	}
 
 	/// <summary>
@@ -135,11 +173,16 @@ internal class BundledPackage
 	/// </summary>
 	public void Unload()
 	{
-		if (_packageMetadata == null) return;
+		if (PackageMetadata == null) return;
 
-		_onUnloadMethod.ForEach(info => info.Invoke(_mainInstance, null));
+		_onUnloadMethod.ForEach(info => info.Invoke(MainInstance, null));
 
 		_context.Unload();
+	}
+
+	public void Dispose()
+	{
+		Log.Info("Disposing {pkg}", PackageMetadata?.Identifier);
 	}
 }
 
@@ -147,7 +190,7 @@ internal class PackageLoadContext : AssemblyLoadContext
 {
 	private AssemblyDependencyResolver _dependencyResolver;
 
-	public PackageLoadContext(string packagePath)
+	public PackageLoadContext(string packagePath) : base(true)
 	{
 		_dependencyResolver = new AssemblyDependencyResolver(packagePath);
 	}

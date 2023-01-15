@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Xml.Linq;
 using Eldora.App.InternalPages.PackageCreator;
+using Eldora.App.InternalPages.PackageManager;
 using Eldora.Extensions;
 using Eldora.InputBoxes;
 using Eldora.Packaging.API.Attributes;
@@ -21,6 +22,7 @@ internal sealed partial class MainWindow : Form
 
 	//private readonly PackageManager _extensionManagerPanel = new();
 	private readonly PackageCreatorPanel _pkgCreator = new();
+	private readonly PackageManagerPanel _pkgManager = new();	
 
 	private const string TITLE_PREFIX = "Eldora";
 
@@ -63,6 +65,15 @@ internal sealed partial class MainWindow : Form
 		_navbarContextMenu.Items.Add(_dockUndockMenuItem);
 		_navbarContextMenu.Opening += NavbarContextMenu_Opening;
 		sidebarTreeView.ContextMenuStrip = _navbarContextMenu;
+
+		EldoraApp.PluginsChanged += EldoraApp_PluginsChanged;
+	}
+
+	private void EldoraApp_PluginsChanged(object? sender, EventArgs e)
+	{
+		_toolsNode.Nodes.Clear();
+
+		AddPluginPages();
 	}
 
 	private void DockUndockMenuItem_Click(object? sender, EventArgs e)
@@ -98,7 +109,8 @@ internal sealed partial class MainWindow : Form
 
 	private void AddInternalPages()
 	{
-		AddInternalPage(null, "Package Creator", _pkgCreator);
+		AddInternalPage(_settingsNode, "Package Creator", _pkgCreator);
+		AddInternalPage(_settingsNode, "Package Manager", _pkgManager);
 	}
 
 	private void AddInternalPage(TreeNode? node, string name, Control control)
@@ -148,7 +160,7 @@ internal sealed partial class MainWindow : Form
 
 	private void AddPluginPages()
 	{
-		foreach (var pkg in EldoraApp.BundledPackages)
+		foreach (var pkg in EldoraApp.LoadedPackages)
 		{
 			var assembly = pkg.RootAssembly;
 			foreach (var type in assembly.GetTypes())

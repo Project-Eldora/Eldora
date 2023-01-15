@@ -8,20 +8,11 @@ namespace Eldora.App;
 internal class EldoraApp
 {
 	private static readonly NLog.Logger Log = NLog.LogManager.GetCurrentClassLogger();
-	//public static SettingsModel SettingsModel { get; private set; }
-
-	public static readonly JsonSerializerOptions DefaultSerializerOptions = new()
-	{
-		Converters =
-		{
-			new JsonVersionConverter()
-		},
-		WriteIndented = true,
-		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-	};
 
 	private static ProgramSettingsModel PackageSettings = new();
-	public static readonly List<BundledPackage> BundledPackages = new();
+	public static readonly List<BundledPackage> LoadedPackages = new();
+
+	public static event EventHandler? PluginsChanged;
 
 	/// <summary>
 	/// Loads the installed plugins
@@ -37,23 +28,42 @@ internal class EldoraApp
 			var path = Path.Combine(InternalPaths.PackagesPath, $"{pkg.PackageName}-{pkg.Version}");
 			if (!Directory.Exists(path))
 			{
-				Log.Warn("Could not load package {pkg}", path);
+				Log.Warn("Could not load package {pkgFolder}", path);
 			}
 			allowedFolders.Add(path);
 		}
 
-		foreach (var pkg in allowedFolders)
+		foreach (var pkgFolder in allowedFolders)
 		{
-			var package = new BundledPackage(pkg);
-			package.Load();
+			var package = BundledPackage.FromFolder(pkgFolder);
+			if (package == null) continue;
 
-			BundledPackages.Add(package);
+			LoadedPackages.Add(package);
+			package.Load();
 		}
 
 		foreach (var dir in Directory.GetDirectories(InternalPaths.PackagesPath).Where(f => !allowedFolders.Contains(f)))
 		{
 			Directory.Delete(dir, true);
 		}
+	}
+
+	public static void InstallPackage(string packagePath)
+	{
+		var package = BundledPackage.FromFile(packagePath);
+		if (package == null) return;
+
+		PackageSettings.InstalledPackages.Add(new InstalledPackage
+		{
+			PackageName = package.PackageMetadata!.Identifier,
+			Version = package.PackageMetadata!.Version.ToString(),
+		});
+		SaveSettings();
+
+		LoadedPackages.Add(package);
+		package.Load();
+
+		OnPluginsChanged();
 	}
 
 	/// <summary>
@@ -70,10 +80,8 @@ internal class EldoraApp
 		}
 
 		var serializer = new XmlSerializer(typeof(ProgramSettingsModel));
-		using (var stream = new FileStream(InternalPaths.SettingsFilePath, FileMode.Open))
-		{
-			PackageSettings = (serializer.Deserialize(stream) as ProgramSettingsModel)!;
-		}
+		using var stream = new FileStream(InternalPaths.SettingsFilePath, FileMode.Open);
+		PackageSettings = (serializer.Deserialize(stream) as ProgramSettingsModel)!;
 	}
 
 	/// <summary>
@@ -84,10 +92,8 @@ internal class EldoraApp
 		Log.Info(message: "Saving Settings.");
 
 		var serializer = new XmlSerializer(typeof(ProgramSettingsModel));
-		using (var stream = new FileStream(InternalPaths.SettingsFilePath, FileMode.Create))
-		{
-			serializer.Serialize(stream, PackageSettings);
-		}
+		using var stream = new FileStream(InternalPaths.SettingsFilePath, FileMode.Create);
+		serializer.Serialize(stream, PackageSettings);
 	}
 
 	/// <summary>
@@ -115,5 +121,23 @@ internal class EldoraApp
 		// unload extension
 
 		SaveSettings();
+	}
+
+	internal static void UninstallPackage(BundledPackage pkg)
+	{
+		var idx = PackageSettings.InstalledPackages.FirstOrDefault(p => p.PackageName == pkg.PackageMetadata!.Identifier);
+		if (idx == default) return;
+
+		pkg.Unload();
+		LoadedPackages.Remove(pkg);
+		PackageSettings.InstalledPackages.Remove(idx);
+		pkg.Dispose();
+
+		OnPluginsChanged();
+	}
+
+	private static void OnPluginsChanged()
+	{
+		PluginsChanged?.Invoke(null, EventArgs.Empty);
 	}
 }
